@@ -4,120 +4,302 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Multi-Engine Gamepad Synth</title>
+    <title>Gamepad Piano by Tri Wahyu</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
     <style>
         :root {
-            --tosca: #00ffd5;
-            --tosca-dim: rgba(0, 255, 213, 0.2);
-            --bg: #0a0f0d;
+            --primary: #00ffd5;
+            --primary-dim: rgba(0, 255, 213, 0.15);
+            --accent: #ff0055;
+            --bg: #050a08;
+            --panel: #0a1411;
         }
 
         body {
-            font-family: system-ui, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: var(--bg);
             color: #fff;
             display: flex;
             flex-direction: column;
             align-items: center;
             padding: 20px;
-            overflow: hidden;
             margin: 0;
+            min-height: 100vh;
+            background-image: radial-gradient(circle at 50% 0%, #0d261e 0%, var(--bg) 60%);
         }
 
-        #init-overlay {
+        /* --- Layar Splash / Loading GitHub --- */
+        #splash-screen {
             position: fixed;
             top: 0;
             left: 0;
             width: 100vw;
             height: 100vh;
-            background: rgba(10, 15, 13, 0.95);
+            background: radial-gradient(circle at center, #0a1411 0%, #000 100%);
             z-index: 100;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
+            transition: opacity 0.5s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .profile-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 30px;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(0px);
+            }
+
+            50% {
+                transform: translateY(-10px);
+            }
+
+            100% {
+                transform: translateY(0px);
+            }
+        }
+
+        .profile-pic {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: 2px solid var(--primary);
+            box-shadow: 0 0 20px var(--primary-dim);
+        }
+
+        .profile-info h1 {
+            margin: 0;
+            font-size: 1.8em;
+            color: var(--primary);
+            letter-spacing: 1px;
+        }
+
+        .profile-info p {
+            margin: 5px 0 0 0;
+            color: #88c2ad;
+            font-family: monospace;
         }
 
         #start-btn {
             padding: 15px 40px;
-            font-size: 1.5em;
-            background: transparent;
-            border: 2px solid var(--tosca);
-            color: var(--tosca);
-            border-radius: 8px;
+            font-size: 1.2em;
+            background: rgba(0, 255, 213, 0.1);
+            border: 1px solid var(--primary);
+            color: var(--primary);
+            border-radius: 30px;
             cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            transition: all 0.3s;
             font-weight: bold;
-            transition: all 0.2s;
+            box-shadow: 0 0 15px var(--primary-dim);
         }
 
         #start-btn:hover {
-            background: var(--tosca);
+            background: var(--primary);
             color: #000;
-            box-shadow: 0 0 20px var(--tosca-dim);
+            box-shadow: 0 0 30px var(--primary);
         }
 
-        /* Kontrol Atas (Status & Pemilihan Suara) */
+        #splash-loading {
+            display: none;
+            width: 300px;
+            text-align: center;
+        }
+
+        .splash-progress-bg {
+            width: 100%;
+            height: 6px;
+            background: #111;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 15px;
+            border: 1px solid #222;
+        }
+
+        #splash-progress-bar {
+            width: 0%;
+            height: 100%;
+            background: var(--primary);
+            box-shadow: 0 0 15px var(--primary);
+            transition: width 0.1s linear;
+        }
+
+        /* --- UI Utama --- */
         .top-controls {
             display: flex;
             flex-direction: column;
             align-items: center;
             width: 100%;
-            max-width: 900px;
+            max-width: 950px;
             margin-bottom: 20px;
-            gap: 10px;
+            gap: 15px;
             margin-top: 10px;
         }
 
-        #status {
-            padding: 15px;
-            background: #1a2622;
+        .config-row {
+            display: flex;
             width: 100%;
+            gap: 15px;
+            align-items: stretch;
+            flex-wrap: wrap;
+        }
+
+        #status {
+            flex: 1;
+            min-width: 250px;
+            padding: 12px;
+            background: var(--panel);
             text-align: center;
-            border-radius: 5px;
-            border: 1px solid #333;
-            transition: border-color 0.3s;
-            box-sizing: border-box;
+            border-radius: 4px;
+            border: 1px solid #1a332a;
+            transition: all 0.3s;
+            font-family: monospace;
+            font-size: 0.9em;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .connected {
-            border-color: var(--tosca) !important;
-            box-shadow: 0 0 15px var(--tosca-dim);
+            border-color: var(--primary) !important;
+            color: var(--primary);
+            box-shadow: 0 0 20px var(--primary-dim);
+        }
+
+        .select-wrapper {
+            flex: 2;
+            min-width: 250px;
+            position: relative;
         }
 
         #instrument-select {
-            padding: 10px;
-            background: #111;
-            color: var(--tosca);
-            border: 1px solid var(--tosca);
-            border-radius: 5px;
-            font-size: 1.1em;
+            padding: 12px 10px;
+            background: #000;
+            color: var(--primary);
+            border: 1px solid var(--primary);
+            border-radius: 4px;
+            font-size: 1em;
             outline: none;
             cursor: pointer;
             width: 100%;
+            height: 100%;
             text-align: center;
             font-weight: bold;
+            box-shadow: 0 0 10px var(--primary-dim);
         }
 
         #instrument-select:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
+            border-color: var(--accent);
+            color: var(--accent);
         }
 
-        .loading-text {
-            color: #ff9800;
-            font-size: 0.9em;
-            margin-top: 5px;
-            height: 20px;
+        .sustain-panel {
+            flex: 1;
+            min-width: 150px;
+            background: var(--panel);
+            border: 1px solid #1a332a;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 10px;
+        }
+
+        .sustain-panel span {
             font-weight: bold;
+            font-size: 0.9em;
+            letter-spacing: 1px;
         }
 
-        /* Area Mode (Piano / Chord) */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 24px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #222;
+            transition: .3s;
+            border-radius: 24px;
+            border: 1px solid #444;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 3px;
+            bottom: 3px;
+            background-color: #888;
+            transition: .3s;
+            border-radius: 50%;
+        }
+
+        input:checked+.slider {
+            background-color: var(--primary-dim);
+            border-color: var(--primary);
+        }
+
+        input:checked+.slider:before {
+            transform: translateX(20px);
+            background-color: var(--primary);
+            box-shadow: 0 0 10px var(--primary);
+        }
+
+        .helper-text {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+            color: #4a7768;
+            font-size: 0.8em;
+            font-family: monospace;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 10px 20px;
+            border-radius: 20px;
+            border: 1px solid #1a332a;
+        }
+
+        .helper-text span b {
+            color: #88c2ad;
+        }
+
+        /* --- Area Mode --- */
         #mode-container {
             width: 100%;
-            max-width: 900px;
+            max-width: 950px;
             position: relative;
-            height: 350px;
+            min-height: 380px;
+            background: var(--panel);
+            border: 1px solid #1a332a;
+            border-radius: 8px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+            overflow: hidden;
         }
 
         .mode-ui {
@@ -131,108 +313,142 @@
             align-items: center;
             justify-content: center;
             opacity: 0;
-            transition: opacity 0.2s;
+            transition: opacity 0.3s ease-out;
+            padding: 20px;
+            box-sizing: border-box;
         }
 
         .mode-ui.active {
             display: flex;
             opacity: 1;
+            position: relative;
         }
 
-        /* UI Piano */
+        /* UI Piano Responsif */
         .piano-wrapper {
             display: flex;
-            height: 200px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
-            border-radius: 5px;
-            background: #111;
-            padding: 10px;
-            border: 1px solid #333;
-            gap: 2px;
+            height: 220px;
+            border-radius: 4px;
+            background: #000;
+            padding: 15px;
+            gap: 4px;
+            border: 1px solid #222;
+            max-width: 100%;
+            overflow-x: auto;
+            box-sizing: border-box;
         }
 
         .white-key {
-            width: 55px;
+            flex: 1;
+            min-width: 45px;
+            max-width: 65px;
             height: 100%;
-            background: #e0e0e0;
-            border: 1px solid #999;
-            border-radius: 0 0 5px 5px;
+            background: linear-gradient(180deg, #dddddd 0%, #ffffff 100%);
+            border-radius: 2px 2px 6px 6px;
             display: flex;
             flex-direction: column;
             justify-content: flex-end;
             align-items: center;
-            padding-bottom: 10px;
-            color: #111;
-            font-weight: bold;
-            transition: background 0.1s;
+            padding-bottom: 15px;
+            color: #000;
+            font-weight: 800;
+            transition: transform 0.05s, box-shadow 0.05s;
             position: relative;
+            box-shadow: inset 0 -4px 5px rgba(0, 0, 0, 0.2), 0 5px 10px rgba(0, 0, 0, 0.5);
+            z-index: 1;
+            border: 1px solid #999;
         }
 
         .white-key.active {
-            background: var(--tosca);
-            box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.5);
-            transform: translateY(2px);
+            background: var(--primary);
+            box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.5), 0 0 20px var(--primary-dim);
+            transform: translateY(4px) scale(0.98);
+            border-color: var(--primary);
         }
 
         .white-key.sharp::after {
             content: '♯';
             position: absolute;
-            top: 10px;
+            top: 15px;
             font-size: 1.5em;
-            color: #d32f2f;
+            color: var(--accent);
+            text-shadow: 0 0 10px var(--accent);
         }
 
         .white-key.flat::after {
             content: '♭';
             position: absolute;
-            top: 10px;
+            top: 15px;
             font-size: 1.5em;
-            color: #1976d2;
+            color: #0066ff;
+            text-shadow: 0 0 10px #0066ff;
         }
 
         .mapping {
-            font-size: 0.65em;
-            color: #555;
+            font-size: 0.6em;
+            color: #666;
             text-align: center;
-            margin-top: 5px;
+            margin-top: 8px;
+            font-family: monospace;
         }
 
-        /* UI Chord */
+        /* UI Radial Responsif */
         .chord-wheels {
             display: flex;
-            gap: 60px;
+            flex-wrap: wrap;
+            gap: 40px;
             width: 100%;
             justify-content: center;
+            margin-bottom: 20px;
         }
 
         .wheel {
-            width: 250px;
-            height: 250px;
+            width: 260px;
+            height: 260px;
             border-radius: 50%;
-            background: var(--tosca-dim);
-            border: 2px solid var(--tosca);
+            background: radial-gradient(circle, rgba(0, 255, 213, 0.05) 0%, rgba(0, 0, 0, 0.5) 100%);
+            border: 1px solid rgba(0, 255, 213, 0.3);
             position: relative;
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: inset 0 0 30px rgba(0, 255, 213, 0.1);
+            box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.9), 0 0 30px rgba(0, 0, 0, 0.5);
+            flex-shrink: 0;
+        }
+
+        .wheel::before {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 1px dashed rgba(0, 255, 213, 0.2);
+            transform: scale(0.7);
+            pointer-events: none;
         }
 
         .wheel-center {
-            width: 70px;
-            height: 70px;
-            background: #0a0f0d;
+            width: 60px;
+            height: 60px;
+            background: #000;
             border-radius: 50%;
             z-index: 10;
             position: absolute;
-            box-shadow: 0 0 15px #000;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 1);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 0.8em;
-            color: var(--tosca);
-            font-weight: bold;
-            border: 1px solid var(--tosca);
+            font-size: 0.7em;
+            color: rgba(255, 255, 255, 0.5);
+            letter-spacing: 2px;
+            border: 2px solid #1a332a;
+            transition: all 0.2s;
+        }
+
+        .wheel-center.active {
+            border-color: var(--primary);
+            color: var(--primary);
+            box-shadow: 0 0 20px var(--primary-dim);
         }
 
         .slice-label {
@@ -240,17 +456,20 @@
             transform-origin: center;
             text-align: center;
             font-weight: bold;
-            width: 40px;
-            height: 20px;
-            color: #557770;
-            transition: color 0.1s, text-shadow 0.1s;
+            width: 50px;
+            height: 24px;
+            color: #3a5c50;
+            transition: all 0.15s ease-out;
             z-index: 5;
+            font-family: monospace;
+            font-size: 1em;
         }
 
         .slice-label.active {
             color: #fff;
-            text-shadow: 0 0 10px var(--tosca);
-            font-size: 1.2em;
+            text-shadow: 0 0 15px var(--primary);
+            font-size: 1.3em;
+            transform: scale(1.1);
         }
 
         .analog-dot {
@@ -260,46 +479,121 @@
             border-radius: 50%;
             position: absolute;
             z-index: 20;
-            box-shadow: 0 0 10px #fff, 0 0 20px var(--tosca);
-            transition: transform 0.05s linear;
+            box-shadow: 0 0 15px #fff, 0 0 20px var(--primary);
             pointer-events: none;
         }
 
+        .chord-display-area {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            min-height: 50px;
+        }
+
         #active-chord-text {
-            margin-top: 25px;
-            font-size: 2em;
-            color: var(--tosca);
+            font-size: 2.2em;
+            color: var(--primary);
+            font-weight: 800;
+            text-shadow: 0 0 20px var(--primary-dim);
+            font-family: system-ui;
+            text-align: center;
+        }
+
+        #chord-modifier-text {
+            font-size: 1.5em;
+            color: var(--accent);
             font-weight: bold;
-            height: 40px;
-            text-shadow: 0 0 15px var(--tosca-dim);
+            text-shadow: 0 0 15px rgba(255, 0, 85, 0.5);
+        }
+
+        /* Media Queries untuk HP */
+        @media (max-width: 768px) {
+            .config-row {
+                flex-direction: column;
+            }
+
+            .wheel {
+                width: 220px;
+                height: 220px;
+            }
+
+            .slice-label {
+                font-size: 0.85em;
+            }
+
+            .piano-wrapper {
+                height: 180px;
+                justify-content: flex-start;
+            }
+
+            .white-key {
+                min-width: 40px;
+                font-size: 0.8em;
+            }
         }
     </style>
 </head>
 
 <body>
 
-    <div id="init-overlay">
-        <button id="start-btn">Inisialisasi Audio</button>
+    <div id="splash-screen">
+        <div class="profile-container">
+            <img class="profile-pic" src="https://github.com/triwahyu45.png" alt="Profile">
+            <div class="profile-info">
+                <h1>Tri Wahyu</h1>
+                <p>github.com/triwahyu45</p>
+            </div>
+        </div>
+        <button id="start-btn">TAP TO START SYSTEM</button>
+
+        <div id="splash-loading">
+            <div style="color: var(--primary); letter-spacing: 2px; font-size: 0.9em; margin-bottom: 5px;">MENGUNDUH
+                ASSET...</div>
+            <div class="splash-progress-bg">
+                <div id="splash-progress-bar"></div>
+            </div>
+        </div>
     </div>
 
     <div class="top-controls">
-        <div id="status">Status: Menunggu Gamepad...</div>
+        <div class="config-row">
+            <div id="status">OS: MENUNGGU PERANGKAT</div>
 
-        <select id="instrument-select">
-            <optgroup label="Sintesis Internal (Realtime - Soft)">
-                <option value="triangle">Soft Triangle (Empuk)</option>
-                <option value="sine">Soft Sine (Murni)</option>
-                <option value="square">Square (Retro)</option>
-                <option value="sawtooth">Chainsaw (Tajam)</option>
-            </optgroup>
-            <optgroup label="Soundbank Eksternal (Butuh Download)">
-                <option value="salamander">Salamander Grand Piano ⬇️</option>
-            </optgroup>
-        </select>
-        <div id="loading-msg" class="loading-text"></div>
+            <div class="select-wrapper">
+                <select id="instrument-select">
+                    <optgroup label="Sintesis Analog (Instan - Ringan)">
+                        <option value="triangle">Soft Triangle (Klasik)</option>
+                        <option value="sine">Soft Sine (Murni)</option>
+                        <option value="square">Square (Retro 8-bit)</option>
+                        <option value="sawtooth">Chainsaw (Tajam)</option>
+                    </optgroup>
+                    <optgroup label="Sintesis Elektronik (Instan)">
+                        <option value="fm-epiano">Electric Piano</option>
+                        <option value="fm-bell">Crystal Bell</option>
+                        <option value="am-pad">Atmospheric Pad</option>
+                    </optgroup>
+                    <optgroup label="Acoustic Soundbank (Download via 🌐)">
+                        <option value="salamander">Salamander Grand Piano ⬇️</option>
+                        <option value="nylon">Nylon Acoustic Guitar ⬇️</option>
+                        <option value="xylophone">Orchestral Xylophone ⬇️</option>
+                    </optgroup>
+                </select>
+            </div>
 
-        <div style="color:#668880; font-size: 0.85em; text-align: center;">
-            <b>OPTIONS</b>: Ganti Mode | <b>L-Analog Up/Down</b>: Shift Kanan | <b>R-Analog Up/Down</b>: Shift Kiri
+            <div class="sustain-panel">
+                <span>SUSTAIN</span>
+                <label class="switch">
+                    <input type="checkbox" id="sustain-toggle" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </div>
+
+        <div class="helper-text">
+            <span><b>[OPTIONS]</b> Ganti Mode</span>
+            <span><b>[L-Stick Y]</b> Shift L-Keys</span>
+            <span><b>[R-Stick Y]</b> Shift R-Keys</span>
+            <span><b>[L1/R1]</b> Modulasi Chord (♭/♯)</span>
         </div>
     </div>
 
@@ -336,94 +630,140 @@
         <div id="mode-chord" class="mode-ui">
             <div class="chord-wheels">
                 <div class="wheel" id="wheel-left">
-                    <div class="wheel-center">ROOT</div>
+                    <div class="wheel-center" id="wc-left">ROOT</div>
                     <div class="analog-dot" id="dot-left"></div>
                 </div>
                 <div class="wheel" id="wheel-right">
-                    <div class="wheel-center">TYPE</div>
+                    <div class="wheel-center" id="wc-right">TYPE</div>
                     <div class="analog-dot" id="dot-right"></div>
                 </div>
             </div>
-            <div id="active-chord-text"></div>
+            <div class="chord-display-area">
+                <div id="active-chord-text"></div>
+                <div id="chord-modifier-text"></div>
+            </div>
         </div>
     </div>
 
     <script>
-        // --- Sistem Manajemen Audio (Multi-Engine) ---
-        let activeEngine = null; // Menunjuk ke PolySynth atau Sampler
+        // --- Sistem Manajemen Audio ---
+        let activeEngine = null;
+        let globalReverb = null;
         let softFilter = null;
         let isAudioReady = false;
 
-        async function switchInstrument(type) {
+        const SOUNDBANKS = {
+            'salamander': { urls: { A1: "A1.mp3", A2: "A2.mp3", A3: "A3.mp3", A4: "A4.mp3", A5: "A5.mp3", A6: "A6.mp3", A7: "A7.mp3" }, baseUrl: "https://tonejs.github.io/audio/salamander/" },
+            'nylon': { urls: { F3: "F3.mp3", F4: "F4.mp3", F5: "F5.mp3" }, baseUrl: "https://tonejs.github.io/audio/casio/" },
+            'xylophone': { urls: { C4: "C4.mp3", C5: "C5.mp3", C6: "C6.mp3" }, baseUrl: "https://tonejs.github.io/audio/salamander/" }
+        };
+
+        // Menangkap event unduhan
+        let loadingBar = document.getElementById('splash-progress-bar');
+        Tone.Buffer.on("progress", (percent) => {
+            if (loadingBar) loadingBar.style.width = `${percent * 100}%`;
+        });
+
+        async function switchInstrument(type, isInitial = false) {
             isAudioReady = false;
-            const loadingMsg = document.getElementById('loading-msg');
             const selectEl = document.getElementById('instrument-select');
             selectEl.disabled = true;
 
-            // Bersihkan instrumen lama jika ada untuk mencegah kebocoran memori
+            // Jika dipanggil dari dropdown (bukan saat start pertama kali)
+            if (!isInitial) {
+                loadingBar = document.getElementById('splash-progress-bar');
+                document.getElementById('splash-screen').style.display = 'flex';
+                document.getElementById('splash-screen').style.opacity = '1';
+                document.getElementById('start-btn').style.display = 'none';
+                document.getElementById('splash-loading').style.display = 'block';
+                loadingBar.style.width = '0%';
+            }
+
             if (activeEngine) {
                 activeEngine.releaseAll();
                 activeEngine.dispose();
             }
 
-            if (type === 'salamander') {
-                loadingMsg.innerText = "Mengunduh Soundbank Piano (Tunggu sebentar)...";
+            if (!globalReverb) globalReverb = new Tone.Reverb({ decay: 2.5, preDelay: 0.1, wet: 0.3 }).toDestination();
+            if (!softFilter) softFilter = new Tone.Filter(1200, "lowpass").connect(globalReverb);
 
+            const isSustain = document.getElementById('sustain-toggle').checked;
+            const releaseTime = isSustain ? 2.5 : 0.1;
+
+            if (SOUNDBANKS[type]) {
                 activeEngine = new Tone.Sampler({
-                    urls: { A1: "A1.mp3", A2: "A2.mp3", A3: "A3.mp3", A4: "A4.mp3", A5: "A5.mp3", A6: "A6.mp3", A7: "A7.mp3" },
-                    release: 1.5, // Efek Pedal Sustain untuk Sampler
-                    baseUrl: "https://tonejs.github.io/audio/salamander/"
-                }).toDestination();
+                    ...SOUNDBANKS[type],
+                    release: releaseTime,
+                    attack: 0.05
+                }).connect(globalReverb);
 
                 await Tone.loaded();
-                loadingMsg.innerText = "";
             } else {
-                // Mode Sintesis Internal (Triangle, Sine, Square, Sawtooth)
-                loadingMsg.innerText = "";
-
-                // Lowpass filter untuk membuat suara "empuk" (menghilangkan frekuensi bising)
-                if (!softFilter) {
-                    softFilter = new Tone.Filter(1200, "lowpass").toDestination();
+                if (type === 'fm-epiano') {
+                    activeEngine = new Tone.PolySynth(Tone.FMSynth, {
+                        harmonicity: 3, modulationIndex: 10, oscillator: { type: "sine" },
+                        envelope: { attack: 0.01, decay: 0.2, sustain: 0.5, release: releaseTime }
+                    }).connect(globalReverb);
+                } else if (type === 'fm-bell') {
+                    activeEngine = new Tone.PolySynth(Tone.FMSynth, {
+                        harmonicity: 2.5, modulationIndex: 20,
+                        envelope: { attack: 0.01, decay: 0.5, sustain: 0.1, release: releaseTime }
+                    }).connect(globalReverb);
+                } else if (type === 'am-pad') {
+                    activeEngine = new Tone.PolySynth(Tone.AMSynth, {
+                        harmonicity: 0.5, oscillator: { type: "triangle" },
+                        envelope: { attack: 0.4, decay: 0.2, sustain: 0.8, release: releaseTime }
+                    }).connect(globalReverb);
+                } else {
+                    activeEngine = new Tone.PolySynth(Tone.Synth, {
+                        oscillator: { type: type },
+                        envelope: { attack: 0.02, decay: 0.1, sustain: 0.8, release: releaseTime },
+                        volume: type === 'sawtooth' ? -10 : -2
+                    }).connect(softFilter);
                 }
-
-                activeEngine = new Tone.PolySynth(Tone.Synth, {
-                    oscillator: { type: type },
-                    envelope: {
-                        attack: 0.02,
-                        decay: 0.1,
-                        sustain: 0.8,
-                        release: 1.5 // Efek Pedal Sustain untuk Osilator
-                    },
-                    volume: type === 'sawtooth' ? -10 : -2 // Kurangi volume sawtooth karena sangat bising
-                }).connect(softFilter);
+                // Delay buatan agar transisi UI terlihat mulus saat memuat instrumen internal
+                await new Promise(r => setTimeout(r, 300));
             }
 
             selectEl.disabled = false;
             isAudioReady = true;
+
+            // Hilangkan overlay
+            document.getElementById('splash-screen').style.opacity = '0';
+            setTimeout(() => { document.getElementById('splash-screen').style.display = 'none'; }, 500);
         }
 
-        // Inisialisasi awal saat tombol ditekan
-        document.getElementById('start-btn').addEventListener('click', async () => {
+        // --- Event Listeners UI ---
+        document.getElementById('start-btn').addEventListener('click', async (e) => {
+            e.target.style.display = 'none';
+            document.getElementById('splash-loading').style.display = 'block';
+
+            // Wajib dipanggil dalam user gesture
             await Tone.start();
-            document.getElementById('init-overlay').style.display = 'none';
-
-            const initialType = document.getElementById('instrument-select').value;
-            await switchInstrument(initialType);
-
+            await switchInstrument(document.getElementById('instrument-select').value, true);
             updateGamepadStatus();
         });
 
-        // Event listener saat memilih dari dropdown
         document.getElementById('instrument-select').addEventListener('change', async (e) => {
             await switchInstrument(e.target.value);
         });
 
-        // --- Logika Kontrol Gamepad & UI ---
+        document.getElementById('sustain-toggle').addEventListener('change', (e) => {
+            const releaseTime = e.target.checked ? 2.5 : 0.1;
+            if (activeEngine) {
+                if (activeEngine.name === "Sampler") activeEngine.release = releaseTime;
+                else activeEngine.set({ envelope: { release: releaseTime } });
+            }
+        });
+
+        // --- Logika Kontrol Gamepad ---
         let gamepadIndex = null;
         let previousButtons = [];
         let currentMode = 'piano';
 
         let activeChordId = null;
+        let chordModifier = 0;
+
         let activeNotes = {};
         let activeChordNotes = [];
 
@@ -443,7 +783,6 @@
             'm': [0, 3, 7], 'm7': [0, 3, 7, 10], 'dim': [0, 3, 6], 'aug': [0, 4, 8]
         };
 
-        // Render UI Wheel
         function createWheelLabels(containerId, items) {
             const container = document.getElementById(containerId);
             const angleStep = 360 / items.length;
@@ -453,8 +792,9 @@
                 el.id = `label-${containerId}-${item}`;
                 el.innerText = item;
                 const angleRad = (index * angleStep - 90) * (Math.PI / 180);
-                el.style.left = `${125 + Math.cos(angleRad) * 95 - 20}px`;
-                el.style.top = `${125 + Math.sin(angleRad) * 95 - 10}px`;
+                // Radius dipangkas sedikit untuk mode HP agar tidak tumpah
+                el.style.left = `calc(50% - 25px + ${Math.cos(angleRad) * 40}%)`;
+                el.style.top = `calc(50% - 12px + ${Math.sin(angleRad) * 40}%)`;
                 container.appendChild(el);
             });
         }
@@ -467,14 +807,13 @@
         }
 
         function getAngleSegment(x, y, totalSlices) {
-            if (Math.hypot(x, y) < 0.4) return null; // Normalisasi Array Negatif
+            if (Math.hypot(x, y) < 0.45) return null;
             let angle = (Math.atan2(y, x) * 180 / Math.PI) + 90;
             if (angle < 0) angle += 360;
             const sliceSize = 360 / totalSlices;
             return Math.floor(((angle + (sliceSize / 2)) % 360) / sliceSize);
         }
 
-        // --- Web Worker Polling Loop ---
         const worker = new Worker(URL.createObjectURL(new Blob([`
             setInterval(() => postMessage('poll'), 16);
         `], { type: 'application/javascript' })));
@@ -484,14 +823,13 @@
             const pad = navigator.getGamepads()[gamepadIndex];
             if (!pad) return;
 
-            // Toggle Mode (Options Button)
             if (pad.buttons[9].pressed && !(previousButtons[9] || false)) {
                 currentMode = currentMode === 'piano' ? 'chord' : 'piano';
+                activeEngine.releaseAll();
 
-                activeEngine.releaseAll(); // Matikan suara yang tersisa
-
-                activeNotes = {}; activeChordId = null; activeChordNotes = [];
+                activeNotes = {}; activeChordId = null; activeChordNotes = []; chordModifier = 0;
                 document.querySelectorAll('.white-key').forEach(el => { el.classList.remove('active', 'sharp', 'flat'); });
+                document.getElementById('chord-modifier-text').innerText = '';
 
                 document.getElementById('mode-piano').className = currentMode === 'piano' ? 'mode-ui active' : 'mode-ui';
                 document.getElementById('mode-chord').className = currentMode === 'chord' ? 'mode-ui active' : 'mode-ui';
@@ -503,7 +841,6 @@
 
                 for (let i = 0; i < pad.buttons.length; i++) {
                     if (!BUTTON_MAP[i]) continue;
-
                     const btnInfo = BUTTON_MAP[i];
                     const isPressed = pad.buttons[i].pressed;
                     const wasPressed = previousButtons[i] || false;
@@ -527,7 +864,6 @@
                         if (activeNotes[i].modState !== currentMod) {
                             activeEngine.triggerRelease(activeNotes[i].note);
                             activeEngine.triggerAttack(targetNote);
-
                             activeNotes[i].note = targetNote;
                             activeNotes[i].modState = currentMod;
 
@@ -539,7 +875,7 @@
                         }
                     } else if (!isPressed && wasPressed) {
                         if (activeNotes[i]) {
-                            activeEngine.triggerRelease(activeNotes[i].note); // Release memicu fading pedal
+                            activeEngine.triggerRelease(activeNotes[i].note);
                             delete activeNotes[i];
                         }
                         if (domEl) domEl.classList.remove('active', 'sharp', 'flat');
@@ -551,41 +887,66 @@
 
                 const dotL = document.getElementById('dot-left');
                 const dotR = document.getElementById('dot-right');
-                if (dotL) dotL.style.transform = `translate(${lx * 100}px, ${ly * 100}px)`;
-                if (dotR) dotR.style.transform = `translate(${rx * 100}px, ${ry * 100}px)`;
+
+                // Gunakan persen agar responsif dengan ukuran wheel
+                if (dotL) dotL.style.transform = `translate(${lx * 40}px, ${ly * 40}px)`;
+                if (dotR) dotR.style.transform = `translate(${rx * 40}px, ${ry * 40}px)`;
 
                 const rootIndex = getAngleSegment(lx, ly, 7);
                 const typeIndex = getAngleSegment(rx, ry, 8);
 
+                let newModifier = chordModifier;
+                if (pad.buttons[5].pressed && !(previousButtons[5] || false)) newModifier = 1;
+                if (pad.buttons[4].pressed && !(previousButtons[4] || false)) newModifier = -1;
+                if (pad.buttons[14].pressed || pad.buttons[15].pressed) newModifier = 0;
+
                 if (rootIndex !== null && typeIndex !== null) {
                     const root = ROOT_NOTES[rootIndex];
                     const type = CHORD_TYPES[typeIndex];
-                    const chordId = `${root}-${type}`;
+
+                    document.getElementById('wc-left').classList.add('active');
+                    document.getElementById('wc-right').classList.add('active');
+
+                    const chordId = `${root}-${type}-${newModifier}`;
 
                     if (activeChordId !== chordId) {
                         if (activeChordNotes.length > 0) activeEngine.triggerRelease(activeChordNotes);
 
                         activeChordId = chordId;
-                        document.getElementById('active-chord-text').innerText = `${root} ${type}`;
+                        chordModifier = newModifier;
+
+                        document.getElementById('active-chord-text').innerText = `${root}${type}`;
+
+                        const modText = document.getElementById('chord-modifier-text');
+                        if (chordModifier === 1) { modText.innerText = '♯'; modText.style.color = 'var(--accent)'; }
+                        else if (chordModifier === -1) { modText.innerText = '♭'; modText.style.color = '#0066ff'; }
+                        else { modText.innerText = ''; }
+
                         document.querySelectorAll('.slice-label').forEach(el => el.classList.remove('active'));
                         document.getElementById(`label-wheel-left-${root}`).classList.add('active');
                         document.getElementById(`label-wheel-right-${type}`).classList.add('active');
 
                         activeChordNotes = [];
                         CHORD_INTERVALS[type].forEach(semitone => {
-                            activeChordNotes.push(transposeNote(`${root}4`, semitone));
+                            activeChordNotes.push(transposeNote(`${root}4`, semitone + chordModifier));
                         });
 
                         activeEngine.triggerAttack(activeChordNotes);
                     }
                 } else if (rootIndex === null || typeIndex === null) {
+                    document.getElementById('wc-left').classList.remove('active');
+                    document.getElementById('wc-right').classList.remove('active');
+
                     if (activeChordId !== null) {
                         if (activeChordNotes.length > 0) {
                             activeEngine.triggerRelease(activeChordNotes);
                             activeChordNotes = [];
                         }
                         activeChordId = null;
+                        chordModifier = 0;
+
                         document.getElementById('active-chord-text').innerText = '';
+                        document.getElementById('chord-modifier-text').innerText = '';
                         document.querySelectorAll('.slice-label').forEach(el => el.classList.remove('active'));
                     }
                 }
@@ -599,17 +960,17 @@
         function updateGamepadStatus() {
             const statusDiv = document.getElementById("status");
             if (gamepadIndex !== null) {
-                statusDiv.textContent = `TERHUBUNG: Gamepad ${gamepadIndex}`;
+                statusDiv.textContent = `[ID: ${gamepadIndex}] TERHUBUNG`;
                 statusDiv.classList.add("connected");
             } else {
-                statusDiv.textContent = `Siap! Hubungkan dan tekan tombol di Gamepad Anda...`;
+                statusDiv.textContent = `OS: MENUNGGU PERANGKAT`;
                 statusDiv.classList.remove("connected");
             }
         }
 
         window.addEventListener("gamepadconnected", (e) => {
             gamepadIndex = e.gamepad.index;
-            updateGamepadStatus();
+            if (isAudioReady) updateGamepadStatus();
         });
 
         window.addEventListener("gamepaddisconnected", (e) => {
