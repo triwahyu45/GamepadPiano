@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gamepad Piano by Tri Wahyu</title>
+    <title>Neo-Synth Gamepad Ultimate</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
     <style>
         :root {
@@ -23,139 +23,70 @@
             flex-direction: column;
             align-items: center;
             padding: 20px;
+            overflow: hidden;
             margin: 0;
-            min-height: 100vh;
             background-image: radial-gradient(circle at 50% 0%, #0d261e 0%, var(--bg) 60%);
         }
 
-        /* --- Layar Splash / Loading GitHub --- */
-        #splash-screen {
+        #init-overlay {
             position: fixed;
             top: 0;
             left: 0;
             width: 100vw;
             height: 100vh;
-            background: radial-gradient(circle at center, #0a1411 0%, #000 100%);
+            background: rgba(5, 10, 8, 0.98);
             z-index: 100;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            transition: opacity 0.5s ease;
             backdrop-filter: blur(10px);
         }
 
-        .profile-container {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            margin-bottom: 30px;
-            animation: float 3s ease-in-out infinite;
-        }
-
-        @keyframes float {
-            0% {
-                transform: translateY(0px);
-            }
-
-            50% {
-                transform: translateY(-10px);
-            }
-
-            100% {
-                transform: translateY(0px);
-            }
-        }
-
-        .profile-pic {
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            border: 2px solid var(--primary);
-            box-shadow: 0 0 20px var(--primary-dim);
-        }
-
-        .profile-info h1 {
-            margin: 0;
-            font-size: 1.8em;
-            color: var(--primary);
-            letter-spacing: 1px;
-        }
-
-        .profile-info p {
-            margin: 5px 0 0 0;
-            color: #88c2ad;
-            font-family: monospace;
-        }
-
         #start-btn {
-            padding: 15px 40px;
-            font-size: 1.2em;
-            background: rgba(0, 255, 213, 0.1);
-            border: 1px solid var(--primary);
+            padding: 15px 50px;
+            font-size: 1.5em;
+            background: transparent;
+            border: 2px solid var(--primary);
             color: var(--primary);
-            border-radius: 30px;
+            border-radius: 4px;
             cursor: pointer;
             text-transform: uppercase;
             letter-spacing: 2px;
-            transition: all 0.3s;
-            font-weight: bold;
-            box-shadow: 0 0 15px var(--primary-dim);
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            box-shadow: 0 0 15px var(--primary-dim), inset 0 0 10px var(--primary-dim);
         }
 
         #start-btn:hover {
             background: var(--primary);
             color: #000;
-            box-shadow: 0 0 30px var(--primary);
+            box-shadow: 0 0 30px var(--primary), inset 0 0 20px rgba(255, 255, 255, 0.5);
+            text-shadow: none;
         }
 
-        #splash-loading {
-            display: none;
-            width: 300px;
-            text-align: center;
-        }
-
-        .splash-progress-bg {
-            width: 100%;
-            height: 6px;
-            background: #111;
-            border-radius: 3px;
-            overflow: hidden;
-            margin-top: 15px;
-            border: 1px solid #222;
-        }
-
-        #splash-progress-bar {
-            width: 0%;
-            height: 100%;
-            background: var(--primary);
-            box-shadow: 0 0 15px var(--primary);
-            transition: width 0.1s linear;
-        }
-
-        /* --- UI Utama --- */
         .top-controls {
             display: flex;
             flex-direction: column;
             align-items: center;
             width: 100%;
-            max-width: 950px;
+            max-width: 1000px;
             margin-bottom: 20px;
             gap: 15px;
             margin-top: 10px;
         }
 
+        /* Baris Konfigurasi */
         .config-row {
             display: flex;
             width: 100%;
-            gap: 15px;
+            gap: 10px;
             align-items: stretch;
             flex-wrap: wrap;
+            justify-content: center;
         }
 
         #status {
             flex: 1;
-            min-width: 250px;
             padding: 12px;
             background: var(--panel);
             text-align: center;
@@ -163,11 +94,12 @@
             border: 1px solid #1a332a;
             transition: all 0.3s;
             font-family: monospace;
-            font-size: 0.9em;
+            font-size: 1em;
             letter-spacing: 1px;
             display: flex;
             align-items: center;
             justify-content: center;
+            min-width: 200px;
         }
 
         .connected {
@@ -177,18 +109,18 @@
         }
 
         .select-wrapper {
-            flex: 2;
-            min-width: 250px;
+            flex: 1;
             position: relative;
+            min-width: 140px;
         }
 
-        #instrument-select {
+        .select-wrapper select {
             padding: 12px 10px;
             background: #000;
             color: var(--primary);
             border: 1px solid var(--primary);
             border-radius: 4px;
-            font-size: 1em;
+            font-size: 0.95em;
             outline: none;
             cursor: pointer;
             width: 100%;
@@ -196,16 +128,20 @@
             text-align: center;
             font-weight: bold;
             box-shadow: 0 0 10px var(--primary-dim);
+            transition: box-shadow 0.3s;
         }
 
-        #instrument-select:disabled {
+        .select-wrapper select:hover {
+            box-shadow: 0 0 20px var(--primary-dim);
+        }
+
+        .select-wrapper select:disabled {
             border-color: var(--accent);
             color: var(--accent);
         }
 
+        /* Sustain Toggle UI */
         .sustain-panel {
-            flex: 1;
-            min-width: 150px;
             background: var(--panel);
             border: 1px solid #1a332a;
             border-radius: 4px;
@@ -213,7 +149,8 @@
             align-items: center;
             justify-content: center;
             gap: 10px;
-            padding: 10px;
+            padding: 0 15px;
+            min-width: 140px;
         }
 
         .sustain-panel span {
@@ -263,12 +200,33 @@
         input:checked+.slider {
             background-color: var(--primary-dim);
             border-color: var(--primary);
+            box-shadow: 0 0 10px var(--primary-dim);
         }
 
         input:checked+.slider:before {
             transform: translateX(20px);
             background-color: var(--primary);
             box-shadow: 0 0 10px var(--primary);
+        }
+
+        /* Progress Bar */
+        #progress-container {
+            width: 100%;
+            height: 6px;
+            background: #111;
+            border-radius: 3px;
+            overflow: hidden;
+            display: none;
+            margin-top: -5px;
+            border: 1px solid #222;
+        }
+
+        #progress-bar {
+            width: 0%;
+            height: 100%;
+            background: var(--accent);
+            box-shadow: 0 0 15px var(--accent);
+            transition: width 0.1s linear;
         }
 
         .helper-text {
@@ -280,7 +238,7 @@
             font-size: 0.8em;
             font-family: monospace;
             background: rgba(0, 0, 0, 0.5);
-            padding: 10px 20px;
+            padding: 8px 15px;
             border-radius: 20px;
             border: 1px solid #1a332a;
         }
@@ -289,17 +247,15 @@
             color: #88c2ad;
         }
 
-        /* --- Area Mode --- */
         #mode-container {
             width: 100%;
             max-width: 950px;
             position: relative;
-            min-height: 380px;
+            height: 380px;
             background: var(--panel);
             border: 1px solid #1a332a;
             border-radius: 8px;
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
-            overflow: hidden;
         }
 
         .mode-ui {
@@ -314,17 +270,14 @@
             justify-content: center;
             opacity: 0;
             transition: opacity 0.3s ease-out;
-            padding: 20px;
-            box-sizing: border-box;
         }
 
         .mode-ui.active {
             display: flex;
             opacity: 1;
-            position: relative;
         }
 
-        /* UI Piano Responsif */
+        /* UI Piano Neo */
         .piano-wrapper {
             display: flex;
             height: 220px;
@@ -333,25 +286,19 @@
             padding: 15px;
             gap: 4px;
             border: 1px solid #222;
-            width: 100%;
-            max-width: 100%;
-            overflow: hidden;
-            box-sizing: border-box;
-            flex-wrap: wrap;
-            align-content: flex-start;
+            justify-content: center;
         }
 
         .white-key {
-            flex: 1;
-            min-width: 30px;
-            height: 100px;
+            width: 60px;
+            height: 100%;
             background: linear-gradient(180deg, #dddddd 0%, #ffffff 100%);
             border-radius: 2px 2px 6px 6px;
             display: flex;
             flex-direction: column;
             justify-content: flex-end;
             align-items: center;
-            padding-bottom: 8px;
+            padding-bottom: 15px;
             color: #000;
             font-weight: 800;
             transition: transform 0.05s, box-shadow 0.05s;
@@ -359,55 +306,131 @@
             box-shadow: inset 0 -4px 5px rgba(0, 0, 0, 0.2), 0 5px 10px rgba(0, 0, 0, 0.5);
             z-index: 1;
             border: 1px solid #999;
-            font-size: 0.75em;
         }
 
         .white-key.active {
             background: var(--primary);
             box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.5), 0 0 20px var(--primary-dim);
             transform: translateY(4px) scale(0.98);
+            color: #000;
             border-color: var(--primary);
+        }
+
+        .white-key.sharp::after,
+        .white-key.flat::after {
+            position: absolute;
+            top: 15px;
+            font-size: 1.8em;
+            font-family: serif;
+            font-weight: normal;
         }
 
         .white-key.sharp::after {
             content: '♯';
-            position: absolute;
-            top: 15px;
-            font-size: 1.5em;
             color: var(--accent);
             text-shadow: 0 0 10px var(--accent);
         }
 
         .white-key.flat::after {
             content: '♭';
-            position: absolute;
-            top: 15px;
-            font-size: 1.5em;
             color: #0066ff;
             text-shadow: 0 0 10px #0066ff;
         }
 
         .mapping {
-            font-size: 0.5em;
+            font-size: 0.6em;
             color: #666;
             text-align: center;
-            margin-top: 4px;
+            margin-top: 8px;
+            font-family: monospace;
+            font-weight: normal;
+        }
+
+        /* Layar Splash GitHub */
+        .profile-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 30px;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(0px);
+            }
+
+            50% {
+                transform: translateY(-10px);
+            }
+
+            100% {
+                transform: translateY(0px);
+            }
+        }
+
+        .profile-pic {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: 2px solid var(--primary);
+            box-shadow: 0 0 20px var(--primary-dim);
+        }
+
+        .profile-info h1 {
+            margin: 0;
+            font-size: 1.8em;
+            color: var(--primary);
+            letter-spacing: 1px;
+        }
+
+        .profile-info p {
+            margin: 5px 0 0 0;
+            color: #88c2ad;
             font-family: monospace;
         }
 
-        /* UI Radial Responsif */
+        #splash-loading {
+            display: none;
+            width: 300px;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .splash-progress-bg {
+            width: 100%;
+            height: 6px;
+            background: #111;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 15px;
+            border: 1px solid #222;
+        }
+
+        #splash-progress-bar {
+            width: 0%;
+            height: 100%;
+            background: var(--primary);
+            box-shadow: 0 0 15px var(--primary);
+            transition: width 0.1s linear;
+        }
+
+        /* UI Radial Neo */
         .chord-wheels {
             display: flex;
-            flex-wrap: wrap;
-            gap: 40px;
+            gap: 80px;
             width: 100%;
             justify-content: center;
-            margin-bottom: 20px;
+            position: absolute;
+            left: 50%;
+            top: 44%;
+            transform: translate(-50%, -50%);
+            will-change: transform;
         }
 
         .wheel {
-            width: 260px;
-            height: 260px;
+            width: 280px;
+            height: 280px;
             border-radius: 50%;
             background: radial-gradient(circle, rgba(0, 255, 213, 0.05) 0%, rgba(0, 0, 0, 0.5) 100%);
             border: 1px solid rgba(0, 255, 213, 0.3);
@@ -416,7 +439,6 @@
             align-items: center;
             justify-content: center;
             box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.9), 0 0 30px rgba(0, 0, 0, 0.5);
-            flex-shrink: 0;
         }
 
         .wheel::before {
@@ -431,8 +453,8 @@
         }
 
         .wheel-center {
-            width: 60px;
-            height: 60px;
+            width: 70px;
+            height: 70px;
             background: #000;
             border-radius: 50%;
             z-index: 10;
@@ -451,7 +473,7 @@
         .wheel-center.active {
             border-color: var(--primary);
             color: var(--primary);
-            box-shadow: 0 0 20px var(--primary-dim);
+            box-shadow: 0 0 20px var(--primary-dim), inset 0 0 10px var(--primary-dim);
         }
 
         .slice-label {
@@ -465,104 +487,75 @@
             transition: all 0.15s ease-out;
             z-index: 5;
             font-family: monospace;
-            font-size: 1em;
+            font-size: 1.1em;
         }
 
         .slice-label.active {
             color: #fff;
-            text-shadow: 0 0 15px var(--primary);
-            font-size: 1.3em;
+            text-shadow: 0 0 15px var(--primary), 0 0 5px var(--primary);
+            font-size: 1.4em;
             transform: scale(1.1);
         }
 
         .analog-dot {
-            width: 12px;
-            height: 12px;
+            width: 14px;
+            height: 14px;
             background: #fff;
             border-radius: 50%;
             position: absolute;
+            left: 50%;
+            top: 50%;
+            margin-left: -7px;
+            margin-top: -7px;
             z-index: 20;
-            box-shadow: 0 0 15px #fff, 0 0 20px var(--primary);
+            box-shadow: 0 0 15px #fff, 0 0 30px var(--primary);
+            transition: transform 0.08s linear, opacity 0.15s ease;
             pointer-events: none;
+            border: 2px solid var(--primary);
+            transform: translate(0px, 0px);
         }
 
         .chord-display-area {
+            position: absolute;
+            left: 50%;
+            bottom: 18px;
+            transform: translateX(-50%);
             display: flex;
             align-items: center;
+            justify-content: center;
             gap: 15px;
-            min-height: 50px;
+            margin-top: 0;
+            min-height: 46px;
+            width: 420px;
+            max-width: calc(100% - 40px);
+            pointer-events: none;
         }
 
         #active-chord-text {
-            font-size: 2.2em;
+            font-size: 2.5em;
+            line-height: 1;
             color: var(--primary);
             font-weight: 800;
             text-shadow: 0 0 20px var(--primary-dim);
             font-family: system-ui;
+            letter-spacing: -1px;
+            min-width: 210px;
             text-align: center;
         }
 
         #chord-modifier-text {
             font-size: 1.5em;
+            line-height: 1;
             color: var(--accent);
             font-weight: bold;
+            font-family: serif;
             text-shadow: 0 0 15px rgba(255, 0, 85, 0.5);
-        }
-
-        /* Media Queries untuk HP */
-        @media (max-width: 1024px) {
-            .piano-wrapper {
-                height: 180px;
-            }
-
-            .white-key {
-                height: 80px;
-                font-size: 0.7em;
-            }
+            min-width: 30px;
         }
 
         @media (max-width: 768px) {
-            .config-row {
-                flex-direction: column;
-            }
-
-            .wheel {
-                width: 220px;
-                height: 220px;
-            }
-
-            .slice-label {
-                font-size: 0.85em;
-            }
-
-            .piano-wrapper {
-                height: 150px;
-            }
-
             .white-key {
-                height: 70px;
-                min-width: 25px;
-                font-size: 0.65em;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .piano-wrapper {
-                height: 120px;
-                padding: 8px;
-                gap: 2px;
-            }
-
-            .white-key {
-                height: 60px;
-                min-width: 20px;
-                font-size: 0.6em;
-                padding-bottom: 4px;
-            }
-
-            .mapping {
-                font-size: 0.4em;
-                margin-top: 2px;
+                font-size: 0.8em;
             }
         }
     </style>
@@ -570,7 +563,7 @@
 
 <body>
 
-    <div id="splash-screen">
+    <div id="init-overlay">
         <div class="profile-container">
             <a href="https://github.com/triwahyu45" target="_blank" rel="noopener noreferrer">
                 <img class="profile-pic" src="https://github.com/triwahyu45.png" alt="Profile">
@@ -581,8 +574,7 @@
                         style="color: inherit; text-decoration: none;">github.com/triwahyu45</a></p>
             </div>
         </div>
-        <button id="start-btn" type="button">TAP TO START SYSTEM</button>
-
+        <button id="start-btn">TAP TO START SYSTEM</button>
         <div id="splash-loading">
             <div style="color: var(--primary); letter-spacing: 2px; font-size: 0.9em; margin-bottom: 5px;">MENGUNDUH
                 ASSET...</div>
@@ -596,11 +588,11 @@
         <div class="config-row">
             <div id="status">OS: MENUNGGU PERANGKAT</div>
 
-            <div class="select-wrapper">
+            <div class="select-wrapper" style="flex: 1.5">
                 <select id="instrument-select">
                     <optgroup label="Sintesis Analog (Instan - Ringan)">
-                        <option value="sine">Pure Sine Wave</option>
                         <option value="triangle">Soft Triangle (Klasik)</option>
+                        <option value="sine">Soft Sine (Murni)</option>
                         <option value="square">Square (Retro 8-bit)</option>
                         <option value="sawtooth">Chainsaw (Tajam)</option>
                     </optgroup>
@@ -611,6 +603,30 @@
                     </optgroup>
                     <optgroup label="Acoustic Soundbank (Download via 🌐)">
                         <option value="salamander">Salamander Grand Piano ⬇️</option>
+                        <option value="nylon">Nylon Acoustic Guitar ⬇️</option>
+                        <option value="xylophone">Orchestral Xylophone ⬇️</option>
+                    </optgroup>
+                </select>
+            </div>
+
+            <div class="select-wrapper">
+                <select id="scale-select">
+                    <optgroup label="Scale Type">
+                        <option value="major" selected>Major Scale</option>
+                        <option value="minor">Minor Scale</option>
+                        <option value="pentatonic">Pentatonic</option>
+                        <option value="blues">Blues Scale</option>
+                        <option value="chromatic">Chromatic</option>
+                    </optgroup>
+                </select>
+            </div>
+
+            <div class="select-wrapper">
+                <select id="range-select">
+                    <optgroup label="Note Range">
+                        <option value="1">1 Octave</option>
+                        <option value="2" selected>2 Octaves</option>
+                        <option value="3">3 Octaves</option>
                     </optgroup>
                 </select>
             </div>
@@ -624,41 +640,22 @@
             </div>
         </div>
 
+        <div id="progress-container">
+            <div id="progress-bar"></div>
+        </div>
+
         <div class="helper-text">
             <span><b>[OPTIONS]</b> Ganti Mode</span>
+            <span><b>[SCALE/RANGE]</b> Ubah nada piano + chord</span>
             <span><b>[L-Stick Y]</b> Shift L-Keys</span>
             <span><b>[R-Stick Y]</b> Shift R-Keys</span>
-            <span><b>[L1/R1]</b> Modulasi Chord (♭/♯)</span>
+            <span><b>[L1/R1]</b> Modulasi Chord (♭/♯)</span><span><b>[Chord L-Stick Radius]</b> Pilih Octave</span>
         </div>
     </div>
 
     <div id="mode-container">
         <div id="mode-piano" class="mode-ui active">
-            <div class="piano-wrapper">
-                <div class="white-key" id="key-A3">A3 <div class="mapping">L2</div>
-                </div>
-                <div class="white-key" id="key-B3">B3 <div class="mapping">L1</div>
-                </div>
-                <div class="white-key" id="key-C4">C4 <div class="mapping">D-Down</div>
-                </div>
-                <div class="white-key" id="key-D4">D4 <div class="mapping">Cross</div>
-                </div>
-                <div class="white-key" id="key-E4">E4 <div class="mapping">D-Left</div>
-                </div>
-                <div class="white-key" id="key-F4">F4 <div class="mapping">Square</div>
-                </div>
-                <div class="white-key" id="key-G4">G4 <div class="mapping">D-Right</div>
-                </div>
-                <div class="white-key" id="key-A4">A4 <div class="mapping">Circle</div>
-                </div>
-                <div class="white-key" id="key-B4">B4 <div class="mapping">D-Up</div>
-                </div>
-                <div class="white-key" id="key-C5">C5 <div class="mapping">Triangle</div>
-                </div>
-                <div class="white-key" id="key-D5">D5 <div class="mapping">R1</div>
-                </div>
-                <div class="white-key" id="key-E5">E5 <div class="mapping">R2</div>
-                </div>
+            <div class="piano-wrapper" id="piano-wrapper">
             </div>
         </div>
 
@@ -681,6 +678,97 @@
     </div>
 
     <script>
+        // --- Scale Definitions ---
+        const SCALES = {
+            major: [0, 2, 4, 5, 7, 9, 11],
+            minor: [0, 2, 3, 5, 7, 8, 10],
+            pentatonic: [0, 2, 4, 7, 9],
+            blues: [0, 3, 5, 6, 7, 10],
+            chromatic: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+        };
+
+        const PIANO_BUTTONS = [6, 4, 13, 0, 14, 2, 15, 1, 12, 3, 5, 7]; // L2, L1, D-Down, Cross, D-Left...
+        const BUTTON_LABELS = { 6: 'L2', 4: 'L1', 13: 'D-Down', 0: 'Cross', 14: 'D-Left', 2: 'Square', 15: 'D-Right', 1: 'Circle', 12: 'D-Up', 3: 'Triangle', 5: 'R1', 7: 'R2' };
+        const SIDE_MAP = { 6: 'left', 4: 'left', 13: 'left', 0: 'right', 14: 'left', 2: 'right', 15: 'left', 1: 'right', 12: 'left', 3: 'right', 5: 'right', 7: 'right' };
+
+        let currentScale = 'major';
+        let currentRange = 2;
+        let baseMidi = 60; // Start at C4
+        let DYNAMIC_BUTTON_MAP = {};
+
+        function midiToNote(midi) {
+            const notes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+            const octave = Math.floor(midi / 12) - 1;
+            return notes[midi % 12] + octave;
+        }
+
+        // --- Generator Piano Dinamis ---
+        function generateScaleMidiNotes(includeTopRoot = true) {
+            const scale = SCALES[currentScale] || SCALES.major;
+            const notes = [];
+
+            for (let o = 0; o < currentRange; o++) {
+                for (let i = 0; i < scale.length; i++) {
+                    notes.push(baseMidi + (o * 12) + scale[i]);
+                }
+            }
+
+            // Mirip soundgo: range terasa "nambah" karena root oktaf atas ikut tersedia.
+            if (includeTopRoot) notes.push(baseMidi + currentRange * 12);
+            return notes;
+        }
+
+        // --- Generator Piano Dinamis ---
+        function regeneratePianoKeys() {
+            const pianoWrapper = document.getElementById('piano-wrapper');
+            if (!pianoWrapper) return;
+
+            // Biar aman saat user mengganti scale/range ketika tombol/chord masih ditekan.
+            if (activeEngine && typeof activeEngine.releaseAll === 'function') {
+                activeEngine.releaseAll();
+            }
+            activeNotes = {};
+            if (typeof resetChordState === 'function') resetChordState();
+
+            const generatedNotes = generateScaleMidiNotes(true);
+
+            DYNAMIC_BUTTON_MAP = {};
+            pianoWrapper.innerHTML = '';
+
+            // Gamepad hanya punya 12 tombol utama untuk mode piano.
+            // Kalau scale/range menghasilkan >12 nada, sebar 12 tombol dari awal sampai akhir range.
+            // Jadi 2 Oct dan 3 Oct benar-benar terdengar beda, bukan cuma kepotong di 12 nada awal.
+            const visibleNotes = generatedNotes.length <= PIANO_BUTTONS.length
+                ? generatedNotes
+                : PIANO_BUTTONS.map((_, i) => {
+                    const srcIndex = Math.round(i * (generatedNotes.length - 1) / (PIANO_BUTTONS.length - 1));
+                    return generatedNotes[srcIndex];
+                });
+
+            for (let i = 0; i < visibleNotes.length; i++) {
+                const btnIndex = PIANO_BUTTONS[i];
+                const midiVal = visibleNotes[i];
+                const noteName = midiToNote(midiVal);
+
+                DYNAMIC_BUTTON_MAP[btnIndex] = {
+                    id: 'key-' + btnIndex,
+                    note: noteName,
+                    midi: midiVal,
+                    side: SIDE_MAP[btnIndex]
+                };
+
+                const keyDiv = document.createElement('div');
+                keyDiv.className = 'white-key';
+                keyDiv.id = 'key-' + btnIndex;
+                keyDiv.innerHTML = `${noteName} <div class="mapping">${BUTTON_LABELS[btnIndex]}</div>`;
+                pianoWrapper.appendChild(keyDiv);
+            }
+
+            if (typeof regenerateChordRootWheel === 'function') {
+                regenerateChordRootWheel();
+            }
+        }
+
         // --- Sistem Manajemen Audio ---
         let activeEngine = null;
         let globalReverb = null;
@@ -693,27 +781,25 @@
             'xylophone': { urls: { C4: "C4.mp3", C5: "C5.mp3", C6: "C6.mp3" }, baseUrl: "https://tonejs.github.io/audio/salamander/" }
         };
 
-        // Menangkap event unduhan
-        let loadingBar = document.getElementById('splash-progress-bar');
+        let splashBar = document.getElementById('splash-progress-bar');
+        let mainBar = document.getElementById('progress-bar');
+
         if (Tone.Buffer && typeof Tone.Buffer.on === 'function') {
             Tone.Buffer.on("progress", (percent) => {
-                if (loadingBar) loadingBar.style.width = `${percent * 100}%`;
+                if (splashBar) splashBar.style.width = `${percent * 100}%`;
+                if (mainBar) mainBar.style.width = `${percent * 100}%`;
             });
         }
 
         async function switchInstrument(type, isInitial = false) {
             isAudioReady = false;
             const selectEl = document.getElementById('instrument-select');
+            const progContainer = document.getElementById('progress-container');
             selectEl.disabled = true;
 
-            // Jika dipanggil dari dropdown (bukan saat start pertama kali)
             if (!isInitial) {
-                loadingBar = document.getElementById('splash-progress-bar');
-                document.getElementById('splash-screen').style.display = 'flex';
-                document.getElementById('splash-screen').style.opacity = '1';
-                document.getElementById('start-btn').style.display = 'none';
-                document.getElementById('splash-loading').style.display = 'block';
-                loadingBar.style.width = '0%';
+                progContainer.style.display = 'block';
+                mainBar.style.width = '0%';
             }
 
             if (activeEngine) {
@@ -735,6 +821,7 @@
                 }).connect(globalReverb);
 
                 await Tone.loaded();
+                progContainer.style.display = 'none';
             } else {
                 if (type === 'fm-epiano') {
                     activeEngine = new Tone.PolySynth(Tone.FMSynth, {
@@ -758,41 +845,50 @@
                         volume: type === 'sawtooth' ? -10 : -2
                     }).connect(softFilter);
                 }
-                // Delay buatan agar transisi UI terlihat mulus saat memuat instrumen internal
-                await new Promise(r => setTimeout(r, 300));
+                await new Promise(r => setTimeout(r, 200));
+                progContainer.style.display = 'none';
             }
 
             selectEl.disabled = false;
             isAudioReady = true;
 
-            // Hilangkan overlay
-            document.getElementById('splash-screen').style.opacity = '0';
-            setTimeout(() => { document.getElementById('splash-screen').style.display = 'none'; }, 500);
+            if (isInitial) {
+                document.getElementById('init-overlay').style.opacity = '0';
+                setTimeout(() => { document.getElementById('init-overlay').style.display = 'none'; }, 500);
+            }
         }
 
-        // --- Event Listeners UI ---
+        // --- Event Listeners UI Konfigurasi ---
         document.getElementById('start-btn').addEventListener('click', async (e) => {
             const btn = e.target;
-            btn.disabled = true;
-            btn.textContent = 'MENYIAPKAN...';
+            btn.style.display = 'none';
             document.getElementById('splash-loading').style.display = 'block';
 
             try {
-                // Wajib dipanggil dalam user gesture
                 await Tone.start();
+                regeneratePianoKeys(); // Render keys pertama kali
                 await switchInstrument(document.getElementById('instrument-select').value, true);
                 updateGamepadStatus();
             } catch (error) {
                 console.error(error);
-                btn.disabled = false;
-                btn.textContent = 'TAP TO START SYSTEM';
-                document.getElementById('status').textContent = `ERROR: ${error.message || 'Gagal memulai audio'}`;
+                btn.style.display = 'block';
                 document.getElementById('splash-loading').style.display = 'none';
+                document.getElementById('status').textContent = `ERROR AUDIO`;
             }
         });
 
         document.getElementById('instrument-select').addEventListener('change', async (e) => {
             await switchInstrument(e.target.value);
+        });
+
+        document.getElementById('scale-select').addEventListener('change', (e) => {
+            currentScale = e.target.value;
+            regeneratePianoKeys();
+        });
+
+        document.getElementById('range-select').addEventListener('change', (e) => {
+            currentRange = parseInt(e.target.value);
+            regeneratePianoKeys();
         });
 
         document.getElementById('sustain-toggle').addEventListener('change', (e) => {
@@ -803,67 +899,149 @@
             }
         });
 
-        // --- Logika Kontrol Gamepad ---
-        let gamepadIndex = null;
-        let previousButtons = [];
-        let currentMode = 'piano';
-
-        let activeChordId = null;
-        let chordModifier = 0;
-
-        let activeNotes = {};
-        let activeChordNotes = [];
-
-        const BUTTON_MAP = {
-            6: { id: 'key-A3', note: 'A3', side: 'left' }, 4: { id: 'key-B3', note: 'B3', side: 'left' },
-            13: { id: 'key-C4', note: 'C4', side: 'left' }, 0: { id: 'key-D4', note: 'D4', side: 'right' },
-            14: { id: 'key-E4', note: 'E4', side: 'left' }, 2: { id: 'key-F4', note: 'F4', side: 'right' },
-            15: { id: 'key-G4', note: 'G4', side: 'left' }, 1: { id: 'key-A4', note: 'A4', side: 'right' },
-            12: { id: 'key-B4', note: 'B4', side: 'left' }, 3: { id: 'key-C5', note: 'C5', side: 'right' },
-            5: { id: 'key-D5', note: 'D5', side: 'right' }, 7: { id: 'key-E5', note: 'E5', side: 'right' }
-        };
-
-        const ROOT_NOTES = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
+        // --- Variabel Chord ---
+        // ROOT di chord mode sekarang dinamis ikut Scale + Range.
+        // Angle stick memilih nada dalam scale, radius stick memilih oktaf range.
         const CHORD_TYPES = ['maj', 'maj7', '7', 'sus4', 'm', 'm7', 'dim', 'aug'];
         const CHORD_INTERVALS = {
             'maj': [0, 4, 7], 'maj7': [0, 4, 7, 11], '7': [0, 4, 7, 10], 'sus4': [0, 5, 7],
             'm': [0, 3, 7], 'm7': [0, 3, 7, 10], 'dim': [0, 3, 6], 'aug': [0, 4, 8]
         };
 
+        let CHORD_ROOT_ITEMS = [];
+        let activeChordId = null;
+        let chordModifier = 0;
+        let activeNotes = {};
+        let activeChordNotes = [];
+
+        function clearWheelLabels(containerId) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            container.querySelectorAll('.slice-label').forEach(el => el.remove());
+        }
+
+        function safeLabelId(prefix, label) {
+            return `${prefix}-${label.replace(/[^a-zA-Z0-9_-]/g, '_')}`;
+        }
+
         function createWheelLabels(containerId, items) {
             const container = document.getElementById(containerId);
+            if (!container) return;
+            clearWheelLabels(containerId);
+
             const angleStep = 360 / items.length;
             items.forEach((item, index) => {
+                const label = typeof item === 'string' ? item : item.label;
                 const el = document.createElement('div');
                 el.className = 'slice-label';
-                el.id = `label-${containerId}-${item}`;
-                el.innerText = item;
+                el.id = safeLabelId(`label-${containerId}`, label);
+                el.innerText = label;
+
                 const angleRad = (index * angleStep - 90) * (Math.PI / 180);
-                // Radius dipangkas sedikit untuk mode HP agar tidak tumpah
                 el.style.left = `calc(50% - 25px + ${Math.cos(angleRad) * 40}%)`;
                 el.style.top = `calc(50% - 12px + ${Math.sin(angleRad) * 40}%)`;
                 container.appendChild(el);
             });
         }
-        createWheelLabels('wheel-left', ROOT_NOTES);
-        createWheelLabels('wheel-right', CHORD_TYPES);
+
+        function regenerateChordRootWheel() {
+            const scale = SCALES[currentScale] || SCALES.major;
+
+            // Label wheel cukup satu putaran scale supaya tidak terlalu penuh.
+            // Range tetap ngaruh lewat radius stick: dekat tengah = oktaf rendah, luar = oktaf tinggi.
+            CHORD_ROOT_ITEMS = scale.map(semitone => {
+                const midi = baseMidi + semitone;
+                return {
+                    semitone,
+                    midi,
+                    label: midiToNote(midi).replace(/\d+$/, '')
+                };
+            });
+
+            createWheelLabels('wheel-left', CHORD_ROOT_ITEMS);
+            createWheelLabels('wheel-right', CHORD_TYPES);
+
+            const wcLeft = document.getElementById('wc-left');
+            if (wcLeft) wcLeft.innerText = `${currentRange} OCT`;
+        }
+
+        function resetChordState() {
+            if (activeChordNotes.length > 0 && activeEngine) {
+                activeEngine.triggerRelease(activeChordNotes);
+            }
+
+            activeChordId = null;
+            activeChordNotes = [];
+            chordModifier = 0;
+
+            const activeChordText = document.getElementById('active-chord-text');
+            const modifierText = document.getElementById('chord-modifier-text');
+            if (activeChordText) activeChordText.innerText = '';
+            if (modifierText) modifierText.innerText = '';
+
+            document.querySelectorAll('.slice-label').forEach(el => el.classList.remove('active'));
+            document.getElementById('wc-left')?.classList.remove('active');
+            document.getElementById('wc-right')?.classList.remove('active');
+        }
+
+        regenerateChordRootWheel();
 
         function transposeNote(noteStr, semitoneShift) {
             if (semitoneShift === 0) return noteStr;
             return Tone.Frequency(noteStr).transpose(semitoneShift).toNote();
         }
 
-        function getAngleSegment(x, y, totalSlices) {
-            if (Math.hypot(x, y) < 0.45) return null;
+        function applyDeadzone(v, dz = 0.18) {
+            return Math.abs(v) < dz ? 0 : v;
+        }
+
+        function smoothAxis(prev, raw, alpha = 0.28) {
+            return prev + (raw - prev) * alpha;
+        }
+
+        function getStickState(rawX, rawY, totalSlices) {
+            const x = applyDeadzone(rawX);
+            const y = applyDeadzone(rawY);
+            const magnitude = Math.min(1, Math.hypot(x, y));
+
+            // Inner deadzone dibuat agak besar supaya chord tidak trigger saat analog masih dekat tengah.
+            if (magnitude < 0.42) return { segment: null, octaveIndex: 0, magnitude, x, y };
+
             let angle = (Math.atan2(y, x) * 180 / Math.PI) + 90;
             if (angle < 0) angle += 360;
+
             const sliceSize = 360 / totalSlices;
-            return Math.floor(((angle + (sliceSize / 2)) % 360) / sliceSize);
+            const segment = Math.floor(((angle + (sliceSize / 2)) % 360) / sliceSize);
+
+            // Range ngaruh di chord mode: radius stick memilih oktaf.
+            const octaveIndex = Math.max(
+                0,
+                Math.min(currentRange - 1, Math.floor(((magnitude - 0.42) / 0.58) * currentRange))
+            );
+
+            return { segment, octaveIndex, magnitude, x, y };
+        }
+
+        function getAngleSegment(x, y, totalSlices) {
+            return getStickState(x, y, totalSlices).segment;
+        }
+
+        let smoothLX = 0, smoothLY = 0, smoothRX = 0, smoothRY = 0;
+
+        function updateAnalogDot(dotId, x, y, radius = 105) {
+            const dot = document.getElementById(dotId);
+            if (!dot) return;
+            dot.style.transform = `translate(${x * radius}px, ${y * radius}px)`;
+            dot.style.opacity = Math.hypot(x, y) < 0.05 ? '0.65' : '1';
         }
 
         const worker = new Worker(URL.createObjectURL(new Blob([`
             setInterval(() => postMessage('poll'), 16);
         `], { type: 'application/javascript' })));
+
+        let gamepadIndex = null;
+        let previousButtons = [];
+        let currentMode = 'piano';
 
         worker.onmessage = function () {
             if (gamepadIndex === null || !isAudioReady || !activeEngine) return;
@@ -887,8 +1065,8 @@
                 const leftMod = pad.axes[3] < -0.6 ? 1 : (pad.axes[3] > 0.6 ? -1 : 0);
 
                 for (let i = 0; i < pad.buttons.length; i++) {
-                    if (!BUTTON_MAP[i]) continue;
-                    const btnInfo = BUTTON_MAP[i];
+                    if (!DYNAMIC_BUTTON_MAP[i]) continue;
+                    const btnInfo = DYNAMIC_BUTTON_MAP[i];
                     const isPressed = pad.buttons[i].pressed;
                     const wasPressed = previousButtons[i] || false;
                     const currentMod = btnInfo.side === 'right' ? rightMod : leftMod;
@@ -929,18 +1107,20 @@
                     }
                 }
             } else if (currentMode === 'chord' && pad.axes.length >= 4) {
-                const lx = pad.axes[0], ly = pad.axes[1];
-                const rx = pad.axes[2], ry = pad.axes[3];
+                // Smoothing + deadzone biar titik analog tidak mental/loncat.
+                smoothLX = smoothAxis(smoothLX, pad.axes[0]);
+                smoothLY = smoothAxis(smoothLY, pad.axes[1]);
+                smoothRX = smoothAxis(smoothRX, pad.axes[2]);
+                smoothRY = smoothAxis(smoothRY, pad.axes[3]);
 
-                const dotL = document.getElementById('dot-left');
-                const dotR = document.getElementById('dot-right');
+                const rootState = getStickState(smoothLX, smoothLY, CHORD_ROOT_ITEMS.length);
+                const typeState = getStickState(smoothRX, smoothRY, CHORD_TYPES.length);
 
-                // Gunakan persen agar responsif dengan ukuran wheel
-                if (dotL) dotL.style.transform = `translate(${lx * 40}px, ${ly * 40}px)`;
-                if (dotR) dotR.style.transform = `translate(${rx * 40}px, ${ry * 40}px)`;
+                updateAnalogDot('dot-left', rootState.x, rootState.y, 105);
+                updateAnalogDot('dot-right', typeState.x, typeState.y, 105);
 
-                const rootIndex = getAngleSegment(lx, ly, 7);
-                const typeIndex = getAngleSegment(rx, ry, 8);
+                const rootIndex = rootState.segment;
+                const typeIndex = typeState.segment;
 
                 let newModifier = chordModifier;
                 if (pad.buttons[5].pressed && !(previousButtons[5] || false)) newModifier = 1;
@@ -948,13 +1128,16 @@
                 if (pad.buttons[14].pressed || pad.buttons[15].pressed) newModifier = 0;
 
                 if (rootIndex !== null && typeIndex !== null) {
-                    const root = ROOT_NOTES[rootIndex];
+                    const rootItem = CHORD_ROOT_ITEMS[rootIndex];
+                    const rootMidi = rootItem.midi + (rootState.octaveIndex * 12);
+                    const root = midiToNote(rootMidi);
+                    const rootLabel = rootItem.label;
                     const type = CHORD_TYPES[typeIndex];
 
                     document.getElementById('wc-left').classList.add('active');
                     document.getElementById('wc-right').classList.add('active');
 
-                    const chordId = `${root}-${type}-${newModifier}`;
+                    const chordId = `${rootMidi}-${type}-${newModifier}`;
 
                     if (activeChordId !== chordId) {
                         if (activeChordNotes.length > 0) activeEngine.triggerRelease(activeChordNotes);
@@ -963,38 +1146,27 @@
                         chordModifier = newModifier;
 
                         document.getElementById('active-chord-text').innerText = `${root}${type}`;
-
                         const modText = document.getElementById('chord-modifier-text');
                         if (chordModifier === 1) { modText.innerText = '♯'; modText.style.color = 'var(--accent)'; }
                         else if (chordModifier === -1) { modText.innerText = '♭'; modText.style.color = '#0066ff'; }
                         else { modText.innerText = ''; }
 
                         document.querySelectorAll('.slice-label').forEach(el => el.classList.remove('active'));
-                        document.getElementById(`label-wheel-left-${root}`).classList.add('active');
-                        document.getElementById(`label-wheel-right-${type}`).classList.add('active');
+                        document.getElementById(safeLabelId('label-wheel-left', rootLabel))?.classList.add('active');
+                        document.getElementById(safeLabelId('label-wheel-right', type))?.classList.add('active');
 
-                        activeChordNotes = [];
-                        CHORD_INTERVALS[type].forEach(semitone => {
-                            activeChordNotes.push(transposeNote(`${root}4`, semitone + chordModifier));
+                        activeChordNotes = CHORD_INTERVALS[type].map(semitone => {
+                            return Tone.Frequency(rootMidi + semitone + chordModifier, "midi").toNote();
                         });
 
                         activeEngine.triggerAttack(activeChordNotes);
                     }
-                } else if (rootIndex === null || typeIndex === null) {
+                } else {
                     document.getElementById('wc-left').classList.remove('active');
                     document.getElementById('wc-right').classList.remove('active');
 
                     if (activeChordId !== null) {
-                        if (activeChordNotes.length > 0) {
-                            activeEngine.triggerRelease(activeChordNotes);
-                            activeChordNotes = [];
-                        }
-                        activeChordId = null;
-                        chordModifier = 0;
-
-                        document.getElementById('active-chord-text').innerText = '';
-                        document.getElementById('chord-modifier-text').innerText = '';
-                        document.querySelectorAll('.slice-label').forEach(el => el.classList.remove('active'));
+                        resetChordState();
                     }
                 }
             }
