@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-Engine Gamepad Synth</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <style>
+        :root {
+            --tosca: #00ffd5;
+            --tosca-dim: rgba(0, 255, 213, 0.2);
+            --bg: #0a0f0d;
+        }
+
+        body {
+            font-family: system-ui, sans-serif;
+            background: var(--bg);
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            overflow: hidden;
+            margin: 0;
+        }
+
+        #init-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(10, 15, 13, 0.95);
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #start-btn {
+            padding: 15px 40px;
+            font-size: 1.5em;
+            background: transparent;
+            border: 2px solid var(--tosca);
+            color: var(--tosca);
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+
+        #start-btn:hover {
+            background: var(--tosca);
+            color: #000;
+            box-shadow: 0 0 20px var(--tosca-dim);
+        }
+
+        /* Kontrol Atas (Status & Pemilihan Suara) */
+        .top-controls {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 900px;
+            margin-bottom: 20px;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        #status {
+            padding: 15px;
+            background: #1a2622;
+            width: 100%;
+            text-align: center;
+            border-radius: 5px;
+            border: 1px solid #333;
+            transition: border-color 0.3s;
+            box-sizing: border-box;
+        }
+
+        .connected {
+            border-color: var(--tosca) !important;
+            box-shadow: 0 0 15px var(--tosca-dim);
+        }
+
+        #instrument-select {
+            padding: 10px;
+            background: #111;
+            color: var(--tosca);
+            border: 1px solid var(--tosca);
+            border-radius: 5px;
+            font-size: 1.1em;
+            outline: none;
+            cursor: pointer;
+            width: 100%;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        #instrument-select:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .loading-text {
+            color: #ff9800;
+            font-size: 0.9em;
+            margin-top: 5px;
+            height: 20px;
+            font-weight: bold;
+        }
+
+        /* Area Mode (Piano / Chord) */
+        #mode-container {
+            width: 100%;
+            max-width: 900px;
+            position: relative;
+            height: 350px;
+        }
+
+        .mode-ui {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .mode-ui.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        /* UI Piano */
+        .piano-wrapper {
+            display: flex;
+            height: 200px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+            border-radius: 5px;
+            background: #111;
+            padding: 10px;
+            border: 1px solid #333;
+            gap: 2px;
+        }
+
+        .white-key {
+            width: 55px;
+            height: 100%;
+            background: #e0e0e0;
+            border: 1px solid #999;
+            border-radius: 0 0 5px 5px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: center;
+            padding-bottom: 10px;
+            color: #111;
+            font-weight: bold;
+            transition: background 0.1s;
+            position: relative;
+        }
+
+        .white-key.active {
+            background: var(--tosca);
+            box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.5);
+            transform: translateY(2px);
+        }
+
+        .white-key.sharp::after {
+            content: '♯';
+            position: absolute;
+            top: 10px;
+            font-size: 1.5em;
+            color: #d32f2f;
+        }
+
+        .white-key.flat::after {
+            content: '♭';
+            position: absolute;
+            top: 10px;
+            font-size: 1.5em;
+            color: #1976d2;
+        }
+
+        .mapping {
+            font-size: 0.65em;
+            color: #555;
+            text-align: center;
+            margin-top: 5px;
+        }
+
+        /* UI Chord */
+        .chord-wheels {
+            display: flex;
+            gap: 60px;
+            width: 100%;
+            justify-content: center;
+        }
+
+        .wheel {
+            width: 250px;
+            height: 250px;
+            border-radius: 50%;
+            background: var(--tosca-dim);
+            border: 2px solid var(--tosca);
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: inset 0 0 30px rgba(0, 255, 213, 0.1);
+        }
+
+        .wheel-center {
+            width: 70px;
+            height: 70px;
+            background: #0a0f0d;
+            border-radius: 50%;
+            z-index: 10;
+            position: absolute;
+            box-shadow: 0 0 15px #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8em;
+            color: var(--tosca);
+            font-weight: bold;
+            border: 1px solid var(--tosca);
+        }
+
+        .slice-label {
+            position: absolute;
+            transform-origin: center;
+            text-align: center;
+            font-weight: bold;
+            width: 40px;
+            height: 20px;
+            color: #557770;
+            transition: color 0.1s, text-shadow 0.1s;
+            z-index: 5;
+        }
+
+        .slice-label.active {
+            color: #fff;
+            text-shadow: 0 0 10px var(--tosca);
+            font-size: 1.2em;
+        }
+
+        .analog-dot {
+            width: 12px;
+            height: 12px;
+            background: #fff;
+            border-radius: 50%;
+            position: absolute;
+            z-index: 20;
+            box-shadow: 0 0 10px #fff, 0 0 20px var(--tosca);
+            transition: transform 0.05s linear;
+            pointer-events: none;
+        }
+
+        #active-chord-text {
+            margin-top: 25px;
+            font-size: 2em;
+            color: var(--tosca);
+            font-weight: bold;
+            height: 40px;
+            text-shadow: 0 0 15px var(--tosca-dim);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="init-overlay">
+        <button id="start-btn">Inisialisasi Audio</button>
+    </div>
+
+    <div class="top-controls">
+        <div id="status">Status: Menunggu Gamepad...</div>
+
+        <select id="instrument-select">
+            <optgroup label="Sintesis Internal (Realtime - Soft)">
+                <option value="triangle">Soft Triangle (Empuk)</option>
+                <option value="sine">Soft Sine (Murni)</option>
+                <option value="square">Square (Retro)</option>
+                <option value="sawtooth">Chainsaw (Tajam)</option>
+            </optgroup>
+            <optgroup label="Soundbank Eksternal (Butuh Download)">
+                <option value="salamander">Salamander Grand Piano ⬇️</option>
+            </optgroup>
+        </select>
+        <div id="loading-msg" class="loading-text"></div>
+
+        <div style="color:#668880; font-size: 0.85em; text-align: center;">
+            <b>OPTIONS</b>: Ganti Mode | <b>L-Analog Up/Down</b>: Shift Kanan | <b>R-Analog Up/Down</b>: Shift Kiri
+        </div>
+    </div>
+
+    <div id="mode-container">
+        <div id="mode-piano" class="mode-ui active">
+            <div class="piano-wrapper">
+                <div class="white-key" id="key-A3">A3 <div class="mapping">L2</div>
+                </div>
+                <div class="white-key" id="key-B3">B3 <div class="mapping">L1</div>
+                </div>
+                <div class="white-key" id="key-C4">C4 <div class="mapping">D-Down</div>
+                </div>
+                <div class="white-key" id="key-D4">D4 <div class="mapping">Cross</div>
+                </div>
+                <div class="white-key" id="key-E4">E4 <div class="mapping">D-Left</div>
+                </div>
+                <div class="white-key" id="key-F4">F4 <div class="mapping">Square</div>
+                </div>
+                <div class="white-key" id="key-G4">G4 <div class="mapping">D-Right</div>
+                </div>
+                <div class="white-key" id="key-A4">A4 <div class="mapping">Circle</div>
+                </div>
+                <div class="white-key" id="key-B4">B4 <div class="mapping">D-Up</div>
+                </div>
+                <div class="white-key" id="key-C5">C5 <div class="mapping">Triangle</div>
+                </div>
+                <div class="white-key" id="key-D5">D5 <div class="mapping">R1</div>
+                </div>
+                <div class="white-key" id="key-E5">E5 <div class="mapping">R2</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="mode-chord" class="mode-ui">
+            <div class="chord-wheels">
+                <div class="wheel" id="wheel-left">
+                    <div class="wheel-center">ROOT</div>
+                    <div class="analog-dot" id="dot-left"></div>
+                </div>
+                <div class="wheel" id="wheel-right">
+                    <div class="wheel-center">TYPE</div>
+                    <div class="analog-dot" id="dot-right"></div>
+                </div>
+            </div>
+            <div id="active-chord-text"></div>
+        </div>
+    </div>
+
+    <script>
+        // --- Sistem Manajemen Audio (Multi-Engine) ---
+        let activeEngine = null; // Menunjuk ke PolySynth atau Sampler
+        let softFilter = null;
+        let isAudioReady = false;
+
+        async function switchInstrument(type) {
+            isAudioReady = false;
+            const loadingMsg = document.getElementById('loading-msg');
+            const selectEl = document.getElementById('instrument-select');
+            selectEl.disabled = true;
+
+            // Bersihkan instrumen lama jika ada untuk mencegah kebocoran memori
+            if (activeEngine) {
+                activeEngine.releaseAll();
+                activeEngine.dispose();
+            }
+
+            if (type === 'salamander') {
+                loadingMsg.innerText = "Mengunduh Soundbank Piano (Tunggu sebentar)...";
+
+                activeEngine = new Tone.Sampler({
+                    urls: { A1: "A1.mp3", A2: "A2.mp3", A3: "A3.mp3", A4: "A4.mp3", A5: "A5.mp3", A6: "A6.mp3", A7: "A7.mp3" },
+                    release: 1.5, // Efek Pedal Sustain untuk Sampler
+                    baseUrl: "https://tonejs.github.io/audio/salamander/"
+                }).toDestination();
+
+                await Tone.loaded();
+                loadingMsg.innerText = "";
+            } else {
+                // Mode Sintesis Internal (Triangle, Sine, Square, Sawtooth)
+                loadingMsg.innerText = "";
+
+                // Lowpass filter untuk membuat suara "empuk" (menghilangkan frekuensi bising)
+                if (!softFilter) {
+                    softFilter = new Tone.Filter(1200, "lowpass").toDestination();
+                }
+
+                activeEngine = new Tone.PolySynth(Tone.Synth, {
+                    oscillator: { type: type },
+                    envelope: {
+                        attack: 0.02,
+                        decay: 0.1,
+                        sustain: 0.8,
+                        release: 1.5 // Efek Pedal Sustain untuk Osilator
+                    },
+                    volume: type === 'sawtooth' ? -10 : -2 // Kurangi volume sawtooth karena sangat bising
+                }).connect(softFilter);
+            }
+
+            selectEl.disabled = false;
+            isAudioReady = true;
+        }
+
+        // Inisialisasi awal saat tombol ditekan
+        document.getElementById('start-btn').addEventListener('click', async () => {
+            await Tone.start();
+            document.getElementById('init-overlay').style.display = 'none';
+
+            const initialType = document.getElementById('instrument-select').value;
+            await switchInstrument(initialType);
+
+            updateGamepadStatus();
+        });
+
+        // Event listener saat memilih dari dropdown
+        document.getElementById('instrument-select').addEventListener('change', async (e) => {
+            await switchInstrument(e.target.value);
+        });
+
+        // --- Logika Kontrol Gamepad & UI ---
+        let gamepadIndex = null;
+        let previousButtons = [];
+        let currentMode = 'piano';
+
+        let activeChordId = null;
+        let activeNotes = {};
+        let activeChordNotes = [];
+
+        const BUTTON_MAP = {
+            6: { id: 'key-A3', note: 'A3', side: 'left' }, 4: { id: 'key-B3', note: 'B3', side: 'left' },
+            13: { id: 'key-C4', note: 'C4', side: 'left' }, 0: { id: 'key-D4', note: 'D4', side: 'right' },
+            14: { id: 'key-E4', note: 'E4', side: 'left' }, 2: { id: 'key-F4', note: 'F4', side: 'right' },
+            15: { id: 'key-G4', note: 'G4', side: 'left' }, 1: { id: 'key-A4', note: 'A4', side: 'right' },
+            12: { id: 'key-B4', note: 'B4', side: 'left' }, 3: { id: 'key-C5', note: 'C5', side: 'right' },
+            5: { id: 'key-D5', note: 'D5', side: 'right' }, 7: { id: 'key-E5', note: 'E5', side: 'right' }
+        };
+
+        const ROOT_NOTES = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
+        const CHORD_TYPES = ['maj', 'maj7', '7', 'sus4', 'm', 'm7', 'dim', 'aug'];
+        const CHORD_INTERVALS = {
+            'maj': [0, 4, 7], 'maj7': [0, 4, 7, 11], '7': [0, 4, 7, 10], 'sus4': [0, 5, 7],
+            'm': [0, 3, 7], 'm7': [0, 3, 7, 10], 'dim': [0, 3, 6], 'aug': [0, 4, 8]
+        };
+
+        // Render UI Wheel
+        function createWheelLabels(containerId, items) {
+            const container = document.getElementById(containerId);
+            const angleStep = 360 / items.length;
+            items.forEach((item, index) => {
+                const el = document.createElement('div');
+                el.className = 'slice-label';
+                el.id = `label-${containerId}-${item}`;
+                el.innerText = item;
+                const angleRad = (index * angleStep - 90) * (Math.PI / 180);
+                el.style.left = `${125 + Math.cos(angleRad) * 95 - 20}px`;
+                el.style.top = `${125 + Math.sin(angleRad) * 95 - 10}px`;
+                container.appendChild(el);
+            });
+        }
+        createWheelLabels('wheel-left', ROOT_NOTES);
+        createWheelLabels('wheel-right', CHORD_TYPES);
+
+        function transposeNote(noteStr, semitoneShift) {
+            if (semitoneShift === 0) return noteStr;
+            return Tone.Frequency(noteStr).transpose(semitoneShift).toNote();
+        }
+
+        function getAngleSegment(x, y, totalSlices) {
+            if (Math.hypot(x, y) < 0.4) return null; // Normalisasi Array Negatif
+            let angle = (Math.atan2(y, x) * 180 / Math.PI) + 90;
+            if (angle < 0) angle += 360;
+            const sliceSize = 360 / totalSlices;
+            return Math.floor(((angle + (sliceSize / 2)) % 360) / sliceSize);
+        }
+
+        // --- Web Worker Polling Loop ---
+        const worker = new Worker(URL.createObjectURL(new Blob([`
+            setInterval(() => postMessage('poll'), 16);
+        `], { type: 'application/javascript' })));
+
+        worker.onmessage = function () {
+            if (gamepadIndex === null || !isAudioReady || !activeEngine) return;
+            const pad = navigator.getGamepads()[gamepadIndex];
+            if (!pad) return;
+
+            // Toggle Mode (Options Button)
+            if (pad.buttons[9].pressed && !(previousButtons[9] || false)) {
+                currentMode = currentMode === 'piano' ? 'chord' : 'piano';
+
+                activeEngine.releaseAll(); // Matikan suara yang tersisa
+
+                activeNotes = {}; activeChordId = null; activeChordNotes = [];
+                document.querySelectorAll('.white-key').forEach(el => { el.classList.remove('active', 'sharp', 'flat'); });
+
+                document.getElementById('mode-piano').className = currentMode === 'piano' ? 'mode-ui active' : 'mode-ui';
+                document.getElementById('mode-chord').className = currentMode === 'chord' ? 'mode-ui active' : 'mode-ui';
+            }
+
+            if (currentMode === 'piano' && pad.axes.length >= 4) {
+                const rightMod = pad.axes[1] < -0.6 ? 1 : (pad.axes[1] > 0.6 ? -1 : 0);
+                const leftMod = pad.axes[3] < -0.6 ? 1 : (pad.axes[3] > 0.6 ? -1 : 0);
+
+                for (let i = 0; i < pad.buttons.length; i++) {
+                    if (!BUTTON_MAP[i]) continue;
+
+                    const btnInfo = BUTTON_MAP[i];
+                    const isPressed = pad.buttons[i].pressed;
+                    const wasPressed = previousButtons[i] || false;
+                    const currentMod = btnInfo.side === 'right' ? rightMod : leftMod;
+
+                    const targetNote = transposeNote(btnInfo.note, currentMod);
+                    const domEl = document.getElementById(btnInfo.id);
+
+                    if (isPressed && !wasPressed) {
+                        if (activeNotes[i]) activeEngine.triggerRelease(activeNotes[i].note);
+
+                        activeEngine.triggerAttack(targetNote);
+                        activeNotes[i] = { note: targetNote, modState: currentMod };
+
+                        if (domEl) {
+                            domEl.classList.add('active');
+                            if (currentMod === 1) domEl.classList.add('sharp');
+                            if (currentMod === -1) domEl.classList.add('flat');
+                        }
+                    } else if (isPressed && wasPressed && activeNotes[i]) {
+                        if (activeNotes[i].modState !== currentMod) {
+                            activeEngine.triggerRelease(activeNotes[i].note);
+                            activeEngine.triggerAttack(targetNote);
+
+                            activeNotes[i].note = targetNote;
+                            activeNotes[i].modState = currentMod;
+
+                            if (domEl) {
+                                domEl.classList.remove('sharp', 'flat');
+                                if (currentMod === 1) domEl.classList.add('sharp');
+                                if (currentMod === -1) domEl.classList.add('flat');
+                            }
+                        }
+                    } else if (!isPressed && wasPressed) {
+                        if (activeNotes[i]) {
+                            activeEngine.triggerRelease(activeNotes[i].note); // Release memicu fading pedal
+                            delete activeNotes[i];
+                        }
+                        if (domEl) domEl.classList.remove('active', 'sharp', 'flat');
+                    }
+                }
+            } else if (currentMode === 'chord' && pad.axes.length >= 4) {
+                const lx = pad.axes[0], ly = pad.axes[1];
+                const rx = pad.axes[2], ry = pad.axes[3];
+
+                const dotL = document.getElementById('dot-left');
+                const dotR = document.getElementById('dot-right');
+                if (dotL) dotL.style.transform = `translate(${lx * 100}px, ${ly * 100}px)`;
+                if (dotR) dotR.style.transform = `translate(${rx * 100}px, ${ry * 100}px)`;
+
+                const rootIndex = getAngleSegment(lx, ly, 7);
+                const typeIndex = getAngleSegment(rx, ry, 8);
+
+                if (rootIndex !== null && typeIndex !== null) {
+                    const root = ROOT_NOTES[rootIndex];
+                    const type = CHORD_TYPES[typeIndex];
+                    const chordId = `${root}-${type}`;
+
+                    if (activeChordId !== chordId) {
+                        if (activeChordNotes.length > 0) activeEngine.triggerRelease(activeChordNotes);
+
+                        activeChordId = chordId;
+                        document.getElementById('active-chord-text').innerText = `${root} ${type}`;
+                        document.querySelectorAll('.slice-label').forEach(el => el.classList.remove('active'));
+                        document.getElementById(`label-wheel-left-${root}`).classList.add('active');
+                        document.getElementById(`label-wheel-right-${type}`).classList.add('active');
+
+                        activeChordNotes = [];
+                        CHORD_INTERVALS[type].forEach(semitone => {
+                            activeChordNotes.push(transposeNote(`${root}4`, semitone));
+                        });
+
+                        activeEngine.triggerAttack(activeChordNotes);
+                    }
+                } else if (rootIndex === null || typeIndex === null) {
+                    if (activeChordId !== null) {
+                        if (activeChordNotes.length > 0) {
+                            activeEngine.triggerRelease(activeChordNotes);
+                            activeChordNotes = [];
+                        }
+                        activeChordId = null;
+                        document.getElementById('active-chord-text').innerText = '';
+                        document.querySelectorAll('.slice-label').forEach(el => el.classList.remove('active'));
+                    }
+                }
+            }
+
+            for (let i = 0; i < pad.buttons.length; i++) {
+                previousButtons[i] = pad.buttons[i].pressed;
+            }
+        };
+
+        function updateGamepadStatus() {
+            const statusDiv = document.getElementById("status");
+            if (gamepadIndex !== null) {
+                statusDiv.textContent = `TERHUBUNG: Gamepad ${gamepadIndex}`;
+                statusDiv.classList.add("connected");
+            } else {
+                statusDiv.textContent = `Siap! Hubungkan dan tekan tombol di Gamepad Anda...`;
+                statusDiv.classList.remove("connected");
+            }
+        }
+
+        window.addEventListener("gamepadconnected", (e) => {
+            gamepadIndex = e.gamepad.index;
+            updateGamepadStatus();
+        });
+
+        window.addEventListener("gamepaddisconnected", (e) => {
+            if (e.gamepad.index === gamepadIndex) {
+                gamepadIndex = null;
+                updateGamepadStatus();
+            }
+        });
+    </script>
+</body>
+
+</html>
