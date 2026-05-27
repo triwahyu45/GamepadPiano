@@ -538,13 +538,16 @@
 
     <div id="splash-screen">
         <div class="profile-container">
-            <img class="profile-pic" src="https://github.com/triwahyu45.png" alt="Profile">
+            <a href="https://github.com/triwahyu45" target="_blank" rel="noopener noreferrer">
+                <img class="profile-pic" src="https://github.com/triwahyu45.png" alt="Profile">
+            </a>
             <div class="profile-info">
                 <h1>Tri Wahyu</h1>
-                <p>github.com/triwahyu45</p>
+                <p><a href="https://github.com/triwahyu45" target="_blank" rel="noopener noreferrer"
+                        style="color: inherit; text-decoration: none;">github.com/triwahyu45</a></p>
             </div>
         </div>
-        <button id="start-btn">TAP TO START SYSTEM</button>
+        <button id="start-btn" type="button">TAP TO START SYSTEM</button>
 
         <div id="splash-loading">
             <div style="color: var(--primary); letter-spacing: 2px; font-size: 0.9em; margin-bottom: 5px;">MENGUNDUH
@@ -652,7 +655,7 @@
         let softFilter = null;
         let isAudioReady = false;
 
-        const SOUNDBANKS = {
+            const SOUNDBANKS = {
             'salamander': { urls: { A1: "A1.mp3", A2: "A2.mp3", A3: "A3.mp3", A4: "A4.mp3", A5: "A5.mp3", A6: "A6.mp3", A7: "A7.mp3" }, baseUrl: "https://tonejs.github.io/audio/salamander/" },
             'nylon': { urls: { F3: "F3.mp3", F4: "F4.mp3", F5: "F5.mp3" }, baseUrl: "https://tonejs.github.io/audio/casio/" },
             'xylophone': { urls: { C4: "C4.mp3", C5: "C5.mp3", C6: "C6.mp3" }, baseUrl: "https://tonejs.github.io/audio/salamander/" }
@@ -660,9 +663,11 @@
 
         // Menangkap event unduhan
         let loadingBar = document.getElementById('splash-progress-bar');
-        Tone.Buffer.on("progress", (percent) => {
-            if (loadingBar) loadingBar.style.width = `${percent * 100}%`;
-        });
+        if (Tone.Buffer && typeof Tone.Buffer.on === 'function') {
+            Tone.Buffer.on("progress", (percent) => {
+                if (loadingBar) loadingBar.style.width = `${percent * 100}%`;
+            });
+        }
 
         async function switchInstrument(type, isInitial = false) {
             isAudioReady = false;
@@ -735,13 +740,23 @@
 
         // --- Event Listeners UI ---
         document.getElementById('start-btn').addEventListener('click', async (e) => {
-            e.target.style.display = 'none';
+            const btn = e.target;
+            btn.disabled = true;
+            btn.textContent = 'MENYIAPKAN...';
             document.getElementById('splash-loading').style.display = 'block';
 
-            // Wajib dipanggil dalam user gesture
-            await Tone.start();
-            await switchInstrument(document.getElementById('instrument-select').value, true);
-            updateGamepadStatus();
+            try {
+                // Wajib dipanggil dalam user gesture
+                await Tone.start();
+                await switchInstrument(document.getElementById('instrument-select').value, true);
+                updateGamepadStatus();
+            } catch (error) {
+                console.error(error);
+                btn.disabled = false;
+                btn.textContent = 'TAP TO START SYSTEM';
+                document.getElementById('status').textContent = `ERROR: ${error.message || 'Gagal memulai audio'}`;
+                document.getElementById('splash-loading').style.display = 'none';
+            }
         });
 
         document.getElementById('instrument-select').addEventListener('change', async (e) => {
@@ -979,6 +994,7 @@
                 updateGamepadStatus();
             }
         });
+    });
     </script>
 </body>
 
