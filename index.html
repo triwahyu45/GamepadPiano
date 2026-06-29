@@ -2005,11 +2005,13 @@
                         activeChordId = chordId;
                         chordModifier = newModifier;
 
-                        document.getElementById('active-chord-text').innerText = `${root}${type}`;
+                        // Hitung nama root note setelah memperhitungkan modifier sharp/flat
+                        const rootMidiWithMod = rootMidi + chordModifier;
+                        const rootNameWithMod = midiToNote(rootMidiWithMod).replace(/\d+$/, '');
+
+                        document.getElementById('active-chord-text').innerText = `${rootNameWithMod}${type}`;
                         const modText = document.getElementById('chord-modifier-text');
-                        if (chordModifier === 1) { modText.innerText = '♯'; modText.style.color = 'var(--accent)'; }
-                        else if (chordModifier === -1) { modText.innerText = '♭'; modText.style.color = '#0066ff'; }
-                        else { modText.innerText = ''; }
+                        if (modText) modText.innerText = '';
 
                         document.querySelectorAll('.slice-label').forEach(el => el.classList.remove('active'));
                         document.getElementById(safeLabelId('label-wheel-left', rootLabel))?.classList.add('active');
