@@ -696,6 +696,8 @@
         let currentRange = 2;
         let baseMidi = 60; // Start at C4
         let DYNAMIC_BUTTON_MAP = {};
+        let isInitializing = false;
+        let isOverlayVisible = true;
 
         function midiToNote(midi) {
             const notes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
@@ -851,13 +853,19 @@
 
             if (isInitial) {
                 document.getElementById('init-overlay').style.opacity = '0';
-                setTimeout(() => { document.getElementById('init-overlay').style.display = 'none'; }, 500);
+                setTimeout(() => { 
+                    document.getElementById('init-overlay').style.display = 'none'; 
+                    isOverlayVisible = false;
+                }, 500);
             }
         }
 
         // --- Event Listeners UI Konfigurasi ---
         document.getElementById('start-btn').addEventListener('click', async (e) => {
-            const btn = e.target;
+            if (isInitializing) return;
+            isInitializing = true;
+
+            const btn = document.getElementById('start-btn');
             btn.style.display = 'none';
             document.getElementById('splash-loading').style.display = 'block';
 
@@ -868,6 +876,7 @@
                 updateGamepadStatus();
             } catch (error) {
                 console.error(error);
+                isInitializing = false;
                 btn.style.display = 'block';
                 document.getElementById('splash-loading').style.display = 'none';
                 document.getElementById('status').textContent = `ERROR AUDIO`;
@@ -910,11 +919,12 @@
         }
 
         window.addEventListener('keydown', (e) => {
-            const overlay = document.getElementById('init-overlay');
-            if (overlay && overlay.style.display !== 'none') {
+            if (isOverlayVisible) {
                 if (e.code === 'Space' || e.code === 'Enter') {
                     e.preventDefault();
-                    document.getElementById('start-btn').click();
+                    if (!isInitializing) {
+                        document.getElementById('start-btn').click();
+                    }
                 }
                 return;
             }
@@ -1099,15 +1109,12 @@
 
         worker.onmessage = function () {
             // Cek jika overlay inisialisasi masih aktif dan user menekan tombol Cross (X) pada gamepad
-            if (gamepadIndex !== null) {
+            if (isOverlayVisible && gamepadIndex !== null) {
                 const pad = navigator.getGamepads()[gamepadIndex];
                 if (pad) {
-                    const overlay = document.getElementById('init-overlay');
-                    if (overlay && overlay.style.display !== 'none') {
-                        if (pad.buttons[0] && pad.buttons[0].pressed) {
-                            document.getElementById('start-btn').click();
-                            return;
-                        }
+                    if (pad.buttons[0] && pad.buttons[0].pressed && !isInitializing) {
+                        document.getElementById('start-btn').click();
+                        return;
                     }
                 }
             }
