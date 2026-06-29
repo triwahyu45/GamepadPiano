@@ -646,6 +646,16 @@
                 </select>
             </div>
 
+            <div class="select-wrapper">
+                <select id="chord-play-select">
+                    <optgroup label="Chord Play Mode">
+                        <option value="block" selected>Block Chord (Simultan)</option>
+                        <option value="strum">Strum (Genjreng)</option>
+                        <option value="arpeggio">Arpeggio (Petikan Loop)</option>
+                    </optgroup>
+                </select>
+            </div>
+
             <div class="sustain-panel">
                 <span>SUSTAIN</span>
                 <label class="switch">
@@ -661,10 +671,10 @@
 
         <div class="helper-text">
             <span><b>[OPTIONS]</b> Ganti Mode</span>
-            <span><b>[SHARE + D-Pad/Shoulder]</b> Ubah Setting</span>
+            <span><b>[SHARE + D-Pad/Shoulder/L3]</b> Ubah Setting</span>
             <span><b>[L-Stick Y]</b> Shift L-Keys</span>
             <span><b>[R-Stick Y]</b> Shift R-Keys</span>
-            <span><b>[Keyboard 1/2/3/4]</b> Ubah Setting</span>
+            <span><b>[Keyboard 1/2/3/4/5]</b> Ubah Setting</span>
             <span><b>[Chord L-Stick Radius]</b> Pilih Octave</span>
         </div>
     </div>
@@ -713,6 +723,100 @@
         let DYNAMIC_BUTTON_MAP = {};
         let isInitializing = false;
         let isOverlayVisible = true;
+
+        // --- Variabel State Analog / Chord Play ---
+        let currentChordPlay = 'block'; // 'block', 'strum', 'arpeggio'
+        let arpeggioIntervalId = null;
+        let arpeggioActiveNotes = [];
+
+        // Hysteresis states untuk analog stick chord mode
+        let isLeftActive = false;
+        let isRightActive = false;
+        let lastLeftSegment = null;
+        let lastRightSegment = null;
+        let lastLeftOctave = 0;
+        let lastRightOctave = 0;
+
+        function getStickStateWithHysteresis(rawX, rawY, totalSlices, wasActive, lastSegment, lastOctave) {
+            const x = applyDeadzone(rawX);
+            const y = applyDeadzone(rawY);
+            const magnitude = Math.min(1, Math.hypot(x, y));
+
+            const activateThreshold = 0.65;
+            const releaseThreshold = 0.42;
+
+            let active = wasActive;
+            if (magnitude > activateThreshold) {
+                active = true;
+            } else if (magnitude < releaseThreshold) {
+                active = false;
+            }
+
+            if (!active) {
+                return { segment: null, octaveIndex: 0, magnitude, x, y, active: false };
+            }
+
+            let angle = (Math.atan2(y, x) * 180 / Math.PI) + 90;
+            if (angle < 0) angle += 360;
+
+            const sliceSize = 360 / totalSlices;
+            const segment = Math.floor(((angle + (sliceSize / 2)) % 360) / sliceSize);
+
+            const octaveIndex = Math.max(
+                0,
+                Math.min(currentRange - 1, Math.floor(((magnitude - releaseThreshold) / (1 - releaseThreshold)) * currentRange))
+            );
+
+            let finalSegment = segment;
+            let finalOctave = octaveIndex;
+            if (magnitude < activateThreshold && lastSegment !== null) {
+                finalSegment = lastSegment;
+                finalOctave = lastOctave;
+            }
+
+            return { segment: finalSegment, octaveIndex: finalOctave, magnitude, x, y, active: true };
+        }
+
+        function startArpeggio(notes) {
+            stopArpeggio();
+            arpeggioActiveNotes = [...notes];
+            let index = 0;
+            const delayMs = 150; // Jeda antar nada petikan
+
+            if (arpeggioActiveNotes.length > 0) {
+                activeEngine.triggerAttack(arpeggioActiveNotes[0]);
+                index = 1;
+            }
+
+            arpeggioIntervalId = setInterval(() => {
+                if (arpeggioActiveNotes.length === 0 || !activeEngine) {
+                    stopArpeggio();
+                    return;
+                }
+                const note = arpeggioActiveNotes[index % arpeggioActiveNotes.length];
+
+                // Sustain toggle off -> matikan nada sebelumnya sebelum bunyikan nada berikutnya
+                const isSustain = document.getElementById('sustain-toggle').checked;
+                if (!isSustain) {
+                    const prevIndex = (index - 1 + arpeggioActiveNotes.length) % arpeggioActiveNotes.length;
+                    activeEngine.triggerRelease(arpeggioActiveNotes[prevIndex]);
+                }
+
+                activeEngine.triggerAttack(note);
+                index++;
+            }, delayMs);
+        }
+
+        function stopArpeggio() {
+            if (arpeggioIntervalId) {
+                clearInterval(arpeggioIntervalId);
+                arpeggioIntervalId = null;
+            }
+            if (arpeggioActiveNotes.length > 0 && activeEngine) {
+                activeEngine.triggerRelease(arpeggioActiveNotes);
+            }
+            arpeggioActiveNotes = [];
+        }
 
         function midiToNote(midi) {
             const notes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
@@ -920,6 +1024,7 @@
                 mainBar.style.width = '0%';
             }
 
+            if (typeof stopArpeggio === 'function') stopArpeggio();
             if (activeEngine) {
                 activeEngine.releaseAll();
                 activeEngine.dispose();
@@ -1037,6 +1142,15 @@
             toggle.dispatchEvent(new Event('change'));
         }
 
+        function cycleChordPlay(direction = 1) {
+            const select = document.getElementById('chord-play-select');
+            let index = select.selectedIndex + direction;
+            if (index >= select.options.length) index = 0;
+            if (index < 0) index = select.options.length - 1;
+            select.selectedIndex = index;
+            select.dispatchEvent(new Event('change'));
+        }
+
         window.addEventListener('keydown', (e) => {
             if (isOverlayVisible) {
                 // Cegah default untuk tombol Space agar halaman tidak bergulir
@@ -1058,6 +1172,8 @@
                 cycleRange(1);
             } else if (e.key === '4') {
                 toggleSustain();
+            } else if (e.key === '5') {
+                cycleChordPlay(1);
             }
         });
 
@@ -1081,6 +1197,11 @@
                 if (activeEngine.name === "Sampler") activeEngine.release = releaseTime;
                 else activeEngine.set({ envelope: { release: releaseTime } });
             }
+        });
+
+        document.getElementById('chord-play-select').addEventListener('change', (e) => {
+            currentChordPlay = e.target.value;
+            if (typeof resetChordState === 'function') resetChordState();
         });
 
         // --- Variabel Chord ---
@@ -1150,13 +1271,25 @@
         }
 
         function resetChordState() {
-            if (activeChordNotes.length > 0 && activeEngine) {
-                activeEngine.triggerRelease(activeChordNotes);
+            if (currentChordPlay === 'arpeggio') {
+                stopArpeggio();
+            } else {
+                if (activeChordNotes.length > 0 && activeEngine) {
+                    activeEngine.triggerRelease(activeChordNotes);
+                }
             }
 
             activeChordId = null;
             activeChordNotes = [];
             chordModifier = 0;
+
+            // Reset hysteresis states
+            isLeftActive = false;
+            isRightActive = false;
+            lastLeftSegment = null;
+            lastRightSegment = null;
+            lastLeftOctave = 0;
+            lastRightOctave = 0;
 
             const activeChordText = document.getElementById('active-chord-text');
             const modifierText = document.getElementById('chord-modifier-text');
@@ -1293,6 +1426,11 @@
                     toggleSustain();
                 }
 
+                // 5. L3 (10) -> Cycle Chord Play Mode
+                if (pad.buttons[10] && pad.buttons[10].pressed && !(previousButtons[10] || false)) {
+                    cycleChordPlay(1);
+                }
+
                 for (let i = 0; i < pad.buttons.length; i++) {
                     previousButtons[i] = pad.buttons[i].pressed;
                 }
@@ -1352,8 +1490,16 @@
                 smoothRX = smoothAxis(smoothRX, pad.axes[2]);
                 smoothRY = smoothAxis(smoothRY, pad.axes[3]);
 
-                const rootState = getStickState(smoothLX, smoothLY, CHORD_ROOT_ITEMS.length);
-                const typeState = getStickState(smoothRX, smoothRY, CHORD_TYPES.length);
+                const rootState = getStickStateWithHysteresis(smoothLX, smoothLY, CHORD_ROOT_ITEMS.length, isLeftActive, lastLeftSegment, lastLeftOctave);
+                const typeState = getStickStateWithHysteresis(smoothRX, smoothRY, CHORD_TYPES.length, isRightActive, lastRightSegment, lastRightOctave);
+
+                isLeftActive = rootState.active;
+                lastLeftSegment = rootState.segment;
+                lastLeftOctave = rootState.octaveIndex;
+
+                isRightActive = typeState.active;
+                lastRightSegment = typeState.segment;
+                lastRightOctave = typeState.octaveIndex;
 
                 updateAnalogDot('dot-left', rootState.x, rootState.y, 105);
                 updateAnalogDot('dot-right', typeState.x, typeState.y, 105);
@@ -1379,7 +1525,11 @@
                     const chordId = `${rootMidi}-${type}-${newModifier}`;
 
                     if (activeChordId !== chordId) {
-                        if (activeChordNotes.length > 0) activeEngine.triggerRelease(activeChordNotes);
+                        if (currentChordPlay === 'arpeggio') {
+                            stopArpeggio();
+                        } else {
+                            if (activeChordNotes.length > 0) activeEngine.triggerRelease(activeChordNotes);
+                        }
 
                         activeChordId = chordId;
                         chordModifier = newModifier;
@@ -1398,7 +1548,15 @@
                             return Tone.Frequency(rootMidi + semitone + chordModifier, "midi").toNote();
                         });
 
-                        activeEngine.triggerAttack(activeChordNotes);
+                        if (currentChordPlay === 'arpeggio') {
+                            startArpeggio(activeChordNotes);
+                        } else if (currentChordPlay === 'strum') {
+                            activeChordNotes.forEach((note, index) => {
+                                activeEngine.triggerAttack(note, Tone.now() + (index * 0.055));
+                            });
+                        } else {
+                            activeEngine.triggerAttack(activeChordNotes);
+                        }
                     }
                 } else {
                     document.getElementById('wc-left').classList.remove('active');
