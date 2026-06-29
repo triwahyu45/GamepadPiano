@@ -1065,6 +1065,7 @@
         let currentScale = localStorage.getItem('gamepad_piano_scale') || 'major';
         let currentRange = parseInt(localStorage.getItem('gamepad_piano_range')) || 2;
         let currentTranspose = parseInt(localStorage.getItem('gamepad_piano_transpose')) || 0;
+        let currentMode = localStorage.getItem('gamepad_piano_mode') || 'piano';
         let baseMidi = 60; // Start at C4
         let DYNAMIC_BUTTON_MAP = {};
         let isInitializing = false;
@@ -1095,6 +1096,8 @@
             if (savedSustain !== null) {
                 document.getElementById('sustain-toggle').checked = savedSustain === 'true';
             }
+
+            setPlayMode(currentMode);
         });
 
         // Hysteresis states untuk analog stick chord mode
@@ -1560,9 +1563,12 @@
         }
 
         function setPlayMode(mode) {
-            if (!isAudioReady || !activeEngine) return;
             currentMode = mode;
-            activeEngine.releaseAll();
+            localStorage.setItem('gamepad_piano_mode', currentMode);
+
+            if (isAudioReady && activeEngine) {
+                activeEngine.releaseAll();
+            }
 
             if (typeof stopArpeggio === 'function') stopArpeggio();
 
@@ -1680,6 +1686,7 @@
         let chordModifier = 0;
         let activeNotes = {};
         let activeChordNotes = [];
+        let lastVisualModifier = null;
 
         function clearWheelLabels(containerId) {
             const container = document.getElementById(containerId);
@@ -1730,6 +1737,22 @@
 
             const wcLeft = document.getElementById('wc-left');
             if (wcLeft) wcLeft.innerText = `${currentRange} OCT`;
+            
+            lastVisualModifier = null;
+        }
+
+        function updateWheelLabelsVisual(modifier) {
+            if (lastVisualModifier === modifier) return;
+            lastVisualModifier = modifier;
+
+            CHORD_ROOT_ITEMS.forEach(item => {
+                const midiWithMod = item.midi + modifier;
+                const noteName = midiToNote(midiWithMod).replace(/\d+$/, '');
+                const labelEl = document.getElementById(safeLabelId('label-wheel-left', item.label));
+                if (labelEl) {
+                    labelEl.innerText = noteName;
+                }
+            });
         }
 
         function resetChordState() {
@@ -1822,7 +1845,6 @@
 
         let gamepadIndex = null;
         let previousButtons = [];
-        let currentMode = 'piano';
 
         worker.onmessage = function () {
             // Cek jika overlay inisialisasi masih aktif dan user menekan tombol APAPUN pada gamepad
@@ -1983,6 +2005,8 @@
                     newModifier = -1; // L1 -> Flat (♭)
                 }
 
+                updateWheelLabelsVisual(newModifier);
+
                 if (rootIndex !== null && typeIndex !== null) {
                     const rootItem = CHORD_ROOT_ITEMS[rootIndex];
                     const rootMidi = rootItem.midi + (rootState.octaveIndex * 12);
@@ -2037,6 +2061,20 @@
 
                     if (activeChordId !== null) {
                         resetChordState();
+                    }
+
+                    // Tampilkan modifikasi visual di layar meskipun stik di tengah
+                    const modText = document.getElementById('chord-modifier-text');
+                    if (modText) {
+                        if (newModifier === 1) {
+                            modText.innerText = '♯';
+                            modText.style.color = 'var(--accent)';
+                        } else if (newModifier === -1) {
+                            modText.innerText = '♭';
+                            modText.style.color = '#0066ff';
+                        } else {
+                            modText.innerText = '';
+                        }
                     }
                 }
             }
