@@ -268,7 +268,12 @@
             border-radius: 8px;
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
             overflow: hidden;
-            transition: all 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+            transition: height 0.5s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.5s;
+        }
+
+        /* Expand container height in chord mode to show piano below wheels */
+        #mode-container.mode-chord {
+            height: 580px;
         }
 
         /* Shared Piano Wrapper */
@@ -331,7 +336,7 @@
 
         /* Chord Mode States */
         #mode-container.mode-chord .piano-wrapper-scroll {
-            transform: translate(-50%, 330px) scale(0.75);
+            transform: translate(-50%, 350px) scale(0.72);
             transform-origin: top center;
         }
 
@@ -944,20 +949,25 @@
                 transform-origin: top center;
             }
 
+            /* chord mode: wheels scale down so piano fits below */
+            #mode-container.mode-chord {
+                height: 520px;
+            }
+
             #mode-container.mode-chord .piano-wrapper-scroll {
-                transform: translate(-50%, 330px) scale(0.62);
+                transform: translate(-50%, 310px) scale(0.60);
                 transform-origin: top center;
             }
 
             #mode-container.mode-chord .chord-wheels {
                 transform: translate(-50%, -50%) scale(0.68);
-                top: 180px;
+                top: 155px;
                 gap: 30px;
             }
 
             #mode-container.mode-chord .chord-display-area {
                 transform: translate(-50%, -50%) scale(0.9);
-                top: 40px;
+                top: 36px;
             }
         }
 
@@ -967,20 +977,24 @@
                 transform-origin: top center;
             }
 
+            #mode-container.mode-chord {
+                height: 460px;
+            }
+
             #mode-container.mode-chord .piano-wrapper-scroll {
-                transform: translate(-50%, 330px) scale(0.44);
+                transform: translate(-50%, 290px) scale(0.44);
                 transform-origin: top center;
             }
 
             #mode-container.mode-chord .chord-wheels {
                 transform: translate(-50%, -50%) scale(0.52);
-                top: 175px;
+                top: 145px;
                 gap: 15px;
             }
 
             #mode-container.mode-chord .chord-display-area {
                 transform: translate(-50%, -50%) scale(0.75);
-                top: 35px;
+                top: 30px;
             }
         }
     </style>
