@@ -623,10 +623,10 @@
 
             <div class="select-wrapper">
                 <select id="range-select">
-                    <optgroup label="Note Range">
-                        <option value="1">1 Octave</option>
-                        <option value="2" selected>2 Octaves</option>
-                        <option value="3">3 Octaves</option>
+                    <optgroup label="Base Octave">
+                        <option value="1">Low (C3)</option>
+                        <option value="2" selected>Medium (C4)</option>
+                        <option value="3">High (C5)</option>
                     </optgroup>
                 </select>
             </div>
@@ -702,19 +702,18 @@
             return notes[midi % 12] + octave;
         }
 
-        // --- Generator Piano Dinamis ---
-        function generateScaleMidiNotes(includeTopRoot = true) {
+        // --- Generator Piano Dinamis Kontigu ---
+        function generateContiguousScaleNotes(count) {
             const scale = SCALES[currentScale] || SCALES.major;
             const notes = [];
-
-            for (let o = 0; o < currentRange; o++) {
+            let octaveOffset = 0;
+            while (notes.length < count) {
                 for (let i = 0; i < scale.length; i++) {
-                    notes.push(baseMidi + (o * 12) + scale[i]);
+                    notes.push(baseMidi + (octaveOffset * 12) + scale[i]);
+                    if (notes.length === count) break;
                 }
+                octaveOffset++;
             }
-
-            // Mirip soundgo: range terasa "nambah" karena root oktaf atas ikut tersedia.
-            if (includeTopRoot) notes.push(baseMidi + currentRange * 12);
             return notes;
         }
 
@@ -730,20 +729,15 @@
             activeNotes = {};
             if (typeof resetChordState === 'function') resetChordState();
 
-            const generatedNotes = generateScaleMidiNotes(true);
+            // Atur baseMidi berdasarkan currentRange (1 -> 48, 2 -> 60, 3 -> 72)
+            if (currentRange === 1) baseMidi = 48;      // Low (C3)
+            else if (currentRange === 2) baseMidi = 60; // Medium (C4)
+            else if (currentRange === 3) baseMidi = 72; // High (C5)
+
+            const visibleNotes = generateContiguousScaleNotes(PIANO_BUTTONS.length);
 
             DYNAMIC_BUTTON_MAP = {};
             pianoWrapper.innerHTML = '';
-
-            // Gamepad hanya punya 12 tombol utama untuk mode piano.
-            // Kalau scale/range menghasilkan >12 nada, sebar 12 tombol dari awal sampai akhir range.
-            // Jadi 2 Oct dan 3 Oct benar-benar terdengar beda, bukan cuma kepotong di 12 nada awal.
-            const visibleNotes = generatedNotes.length <= PIANO_BUTTONS.length
-                ? generatedNotes
-                : PIANO_BUTTONS.map((_, i) => {
-                    const srcIndex = Math.round(i * (generatedNotes.length - 1) / (PIANO_BUTTONS.length - 1));
-                    return generatedNotes[srcIndex];
-                });
 
             for (let i = 0; i < visibleNotes.length; i++) {
                 const btnIndex = PIANO_BUTTONS[i];
