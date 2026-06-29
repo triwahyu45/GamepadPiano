@@ -30,6 +30,13 @@
             box-sizing: border-box;
             margin: 0;
             background-image: radial-gradient(circle at 50% 0%, #010c0a 0%, var(--bg) 90%);
+            /* Prevent text selection on multi-touch */
+            user-select: none;
+            -webkit-user-select: none;
+            /* Prevent callout / magnifier on iOS long press */
+            -webkit-touch-callout: none;
+            /* Let JS handle all pointer events; browser won't pan/zoom unexpectedly */
+            touch-action: pan-y;
         }
 
         #init-overlay {
@@ -265,15 +272,7 @@
         }
 
         /* Shared Piano Wrapper */
-        .piano-wrapper {
-            display: flex;
-            height: 220px;
-            border-radius: 4px;
-            background: #000;
-            padding: 15px;
-            gap: 4px;
-            border: 1px solid #222;
-            justify-content: center;
+        .piano-wrapper-scroll {
             position: absolute;
             left: 50%;
             width: calc(100% - 30px);
@@ -281,13 +280,45 @@
             box-sizing: border-box;
             will-change: transform, opacity;
             transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1);
+            overflow: hidden;
+            border-radius: 4px;
+            border: 1px solid #222;
+            background: #000;
+        }
+
+        .piano-wrapper {
+            display: flex;
+            height: 220px;
+            background: #000;
+            padding: 15px 15px 10px;
+            gap: 4px;
+            overflow-x: auto;
+            overflow-y: hidden;
+            scroll-behavior: smooth;
+            /* Hide scrollbar on webkit, show on Firefox via thin */
+            scrollbar-width: thin;
+            scrollbar-color: #1e3f34 #000;
+        }
+
+        .piano-wrapper::-webkit-scrollbar {
+            height: 5px;
+        }
+        .piano-wrapper::-webkit-scrollbar-track {
+            background: #000;
+        }
+        .piano-wrapper::-webkit-scrollbar-thumb {
+            background: #1e3f34;
+            border-radius: 3px;
         }
 
         /* Piano Mode States */
-        #mode-container.mode-piano .piano-wrapper {
-            transform: translate(-50%, 135px) scale(1);
+        #mode-container.mode-piano .piano-wrapper-scroll {
+            transform: translate(-50%, 125px) scale(1);
         }
-
+        /* The .piano-wrapper itself never needs to move — the .piano-wrapper-scroll does */
+        #mode-container.mode-piano .piano-wrapper-scroll {
+            opacity: 1;
+        }
         #mode-container.mode-piano .chord-wheels {
             opacity: 0;
             pointer-events: none;
@@ -301,7 +332,7 @@
         }
 
         /* Chord Mode States */
-        #mode-container.mode-chord .piano-wrapper {
+        #mode-container.mode-chord .piano-wrapper-scroll {
             transform: translate(-50%, 295px) scale(0.82);
             transform-origin: top center;
         }
@@ -332,47 +363,75 @@
             font-weight: 800;
             transition: transform 0.05s, box-shadow 0.05s;
             position: relative;
-            box-shadow: inset 0 -4px 5px rgba(0, 0, 0, 0.2), 0 5px 10px rgba(0, 0, 0, 0.5);
+            box-shadow: inset -4px 0 5px rgba(0,0,0,0.08), inset 0 -4px 5px rgba(0, 0, 0, 0.2), 0 5px 10px rgba(0, 0, 0, 0.5);
             z-index: 1;
             border: 1px solid #999;
+            cursor: pointer;
+            touch-action: none;
         }
 
         .white-key.active {
             background: var(--primary);
             box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.5), 0 0 20px var(--primary-dim);
             transform: translateY(4px) scale(0.98);
-            color: #000;
             border-color: var(--primary);
         }
 
-        .white-key.sharp::after,
-        .white-key.flat::after {
+        .black-key {
             position: absolute;
-            top: 15px;
-            font-size: 1.8em;
-            font-family: serif;
-            font-weight: normal;
+            top: 0;
+            right: -13px; /* Float halfway over the next key */
+            width: 26px;
+            height: 135px; /* Shorter than white keys */
+            background: linear-gradient(180deg, #111 0%, #333 100%);
+            border: 1px solid #000;
+            border-radius: 0 0 3px 3px;
+            z-index: 10;
+            cursor: pointer;
+            touch-action: none;
+            box-shadow: inset 0 -3px 5px rgba(0, 0, 0, 0.6), 0 3px 6px rgba(0, 0, 0, 0.8);
+            transition: transform 0.05s, background 0.05s, box-shadow 0.05s;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: center;
+            padding-bottom: 8px;
+            box-sizing: border-box;
         }
 
-        .white-key.sharp::after {
-            content: '♯';
-            color: var(--accent);
-            text-shadow: 0 0 10px var(--accent);
+        .black-key.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            box-shadow: 0 0 15px var(--accent);
+            transform: scaleY(0.98);
         }
 
-        .white-key.flat::after {
-            content: '♭';
-            color: #0066ff;
-            text-shadow: 0 0 10px #0066ff;
+        .note-label {
+            font-size: 0.85em;
+            color: #333;
+            user-select: none;
+            pointer-events: none;
+            font-weight: 800;
+        }
+
+        .white-key.active .note-label {
+            color: #000;
         }
 
         .mapping {
-            font-size: 0.6em;
+            font-size: 0.65em;
             color: #666;
             text-align: center;
-            margin-top: 8px;
+            margin-top: 6px;
             font-family: monospace;
             font-weight: normal;
+        }
+
+        .black-key .mapping {
+            color: #ccc;
+            text-shadow: 0 1px 2px #000;
+            margin-top: 0;
+            font-weight: bold;
         }
 
         /* Layar Splash GitHub */
@@ -570,13 +629,22 @@
             transform-origin: center;
             text-align: center;
             font-weight: bold;
-            width: 50px;
-            height: 24px;
+            width: 54px;
+            height: 32px;
+            line-height: 32px;
             color: #3a5c50;
             transition: all 0.15s ease-out;
             z-index: 5;
             font-family: monospace;
             font-size: 1.1em;
+            cursor: pointer;
+            touch-action: none;
+            border-radius: 6px;
+        }
+
+        .slice-label:hover {
+            color: #7ee8cc;
+            background: rgba(0, 240, 192, 0.08);
         }
 
         .slice-label.active {
@@ -584,6 +652,7 @@
             text-shadow: 0 0 15px var(--primary), 0 0 5px var(--primary);
             font-size: 1.4em;
             transform: scale(1.1);
+            background: rgba(0, 240, 192, 0.12);
         }
 
         .analog-dot {
@@ -746,6 +815,12 @@
             background: var(--primary);
             color: #000;
             box-shadow: 0 0 15px var(--primary);
+        }
+
+        #fullscreen-btn:hover {
+            background: var(--accent) !important;
+            color: #fff !important;
+            box-shadow: 0 0 15px var(--accent) !important;
         }
 
         /* Dedicated Info Modal styling */
@@ -1003,6 +1078,7 @@
         <div class="config-row">
             <div id="status">OS: MENUNGGU PERANGKAT</div>
             <button class="info-trigger-btn" onclick="toggleInfoModal()">PANDUAN</button>
+            <button class="info-trigger-btn" id="fullscreen-btn" onclick="toggleFullscreen()" style="border-color: var(--accent); color: var(--accent); box-shadow: 0 0 10px rgba(255, 0, 85, 0.1); background: rgba(255, 0, 85, 0.05);">🗖 FULLSCREEN</button>
 
             <div class="select-wrapper" style="flex: 1.5">
                 <select id="instrument-select">
@@ -1122,7 +1198,9 @@
             <div id="active-chord-text"></div>
             <div id="chord-modifier-text"></div>
         </div>
-        <div class="piano-wrapper" id="piano-wrapper">
+        <div class="piano-wrapper-scroll" id="piano-wrapper-scroll">
+            <div class="piano-wrapper" id="piano-wrapper">
+            </div>
         </div>
     </div>
 
@@ -1158,8 +1236,16 @@
         let pointerActiveNotes = {};
         let keyboardActiveNotes = {};
         const KEYBOARD_PLAY_KEYS = {
-            'a': 0, 's': 1, 'd': 2, 'f': 3, 'g': 4, 'h': 5, 'j': 6, 'k': 7, 'l': 8, ';': 9, "'": 10, 'enter': 11
+            'a': 0, 's': 2, 'd': 4, 'f': 5, 'g': 7, 'h': 9, 'j': 11,
+            'k': 12, 'l': 14, ';': 16, "'": 17, 'z': 19, 'x': 21, 'c': 23, 'v': 24,
+            'w': 1, 'e': 3, 't': 6, 'y': 8, 'u': 10,
+            'o': 13, 'p': 15, '9': 18, '0': 20, '-': 22
         };
+
+        let pointerLeftSegment = null;
+        let pointerRightSegment = null;
+        let pointerLeftOctave = 0;
+        let pointerRightOctave = 0;
 
         function releasePointer(pointerId) {
             const active = pointerActiveNotes[pointerId];
@@ -1167,7 +1253,7 @@
                 if (isAudioReady && activeEngine) {
                     activeEngine.triggerRelease(active.note);
                 }
-                active.el.classList.remove('active', 'sharp', 'flat');
+                active.el.classList.remove('active');
                 delete pointerActiveNotes[pointerId];
             }
         }
@@ -1193,6 +1279,25 @@
             }
 
             setPlayMode(currentMode);
+
+            const wLeft = document.getElementById('wheel-left');
+            if (wLeft) {
+                wLeft.addEventListener('pointerdown', (e) => {
+                    if (!e.target.classList.contains('slice-label')) {
+                        pointerLeftSegment = null;
+                        updatePointerWheelVisuals();
+                    }
+                });
+            }
+            const wRight = document.getElementById('wheel-right');
+            if (wRight) {
+                wRight.addEventListener('pointerdown', (e) => {
+                    if (!e.target.classList.contains('slice-label')) {
+                        pointerRightSegment = null;
+                        updatePointerWheelVisuals();
+                    }
+                });
+            }
         });
 
         // Hysteresis states untuk analog stick chord mode
@@ -1310,36 +1415,38 @@
             highlightPianoKeysForChord([]);
         }
 
+        function noteToMidi(noteName) {
+            const notes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+            const match = noteName.match(/^([A-G]#?)(-?\d+)$/);
+            if (!match) return null;
+            const pitch = match[1];
+            const octave = parseInt(match[2]);
+            const semitone = notes.indexOf(pitch);
+            return (octave + 1) * 12 + semitone;
+        }
+
         function highlightPianoKeysForChord(notes) {
-            document.querySelectorAll('.white-key').forEach(el => { el.classList.remove('active', 'sharp', 'flat'); });
+            document.querySelectorAll('.white-key, .black-key').forEach(el => { el.classList.remove('active'); });
             if (!notes || notes.length === 0) return;
 
-            for (const btnIndex in DYNAMIC_BUTTON_MAP) {
-                const btnInfo = DYNAMIC_BUTTON_MAP[btnIndex];
-                if (notes.includes(btnInfo.note)) {
-                    const domEl = document.getElementById(btnInfo.id);
+            notes.forEach(note => {
+                const midi = noteToMidi(note);
+                if (midi !== null) {
+                    const domEl = document.getElementById('key-' + midi);
                     if (domEl) {
                         domEl.classList.add('active');
-                        if (btnInfo.note.includes('#')) {
-                            domEl.classList.add('sharp');
-                        }
                     }
                 }
-            }
+            });
         }
 
         function highlightSinglePianoKey(note) {
-            document.querySelectorAll('.white-key').forEach(el => { el.classList.remove('active', 'sharp', 'flat'); });
-            for (const btnIndex in DYNAMIC_BUTTON_MAP) {
-                const btnInfo = DYNAMIC_BUTTON_MAP[btnIndex];
-                if (btnInfo.note === note) {
-                    const domEl = document.getElementById(btnInfo.id);
-                    if (domEl) {
-                        domEl.classList.add('active');
-                        if (btnInfo.note.includes('#')) {
-                            domEl.classList.add('sharp');
-                        }
-                    }
+            document.querySelectorAll('.white-key, .black-key').forEach(el => { el.classList.remove('active'); });
+            const midi = noteToMidi(note);
+            if (midi !== null) {
+                const domEl = document.getElementById('key-' + midi);
+                if (domEl) {
+                    domEl.classList.add('active');
                 }
             }
         }
@@ -1367,82 +1474,147 @@
             return notes;
         }
 
+        function setupPointerEvents(keyDiv, noteName) {
+            keyDiv.addEventListener('pointerdown', (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                if (!isAudioReady || !activeEngine) return;
+
+                activeEngine.triggerAttack(noteName);
+                keyDiv.classList.add('active');
+                
+                pointerActiveNotes[e.pointerId] = {
+                    note: noteName,
+                    el: keyDiv
+                };
+
+                try {
+                    keyDiv.setPointerCapture(e.pointerId);
+                } catch (err) {}
+            });
+
+            keyDiv.addEventListener('pointerup', (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                releasePointer(e.pointerId);
+            });
+
+            keyDiv.addEventListener('pointercancel', (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                releasePointer(e.pointerId);
+            });
+
+            keyDiv.addEventListener('pointerleave', (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                releasePointer(e.pointerId);
+            });
+        }
+
         // --- Generator Piano Dinamis ---
         function regeneratePianoKeys() {
             const pianoWrapper = document.getElementById('piano-wrapper');
             if (!pianoWrapper) return;
 
-            // Biar aman saat user mengganti scale/range ketika tombol/chord masih ditekan.
             if (activeEngine && typeof activeEngine.releaseAll === 'function') {
                 activeEngine.releaseAll();
             }
             activeNotes = {};
             if (typeof resetChordState === 'function') resetChordState();
 
-            // Atur baseMidi berdasarkan currentRange (1 -> 48, 2 -> 60, 3 -> 72)
             if (currentRange === 1) baseMidi = 48;      // Low (C3)
             else if (currentRange === 2) baseMidi = 60; // Medium (C4)
             else if (currentRange === 3) baseMidi = 72; // High (C5)
 
-            const visibleNotes = generateContiguousScaleNotes(PIANO_BUTTONS.length);
-
             DYNAMIC_BUTTON_MAP = {};
             pianoWrapper.innerHTML = '';
 
-            for (let i = 0; i < visibleNotes.length; i++) {
-                const btnIndex = PIANO_BUTTONS[i];
-                const midiVal = visibleNotes[i] + currentTranspose;
-                const noteName = midiToNote(midiVal);
+            // Always render 3 full chromatic octaves C2–C5 (MIDI 36–84)
+            const KEYBOARD_START = 36; // C2
+            const KEYBOARD_END   = 84; // C5
 
+            const gamepadMidiNotes = generateContiguousScaleNotes(PIANO_BUTTONS.length);
+            for (let i = 0; i < gamepadMidiNotes.length; i++) {
+                const btnIndex = PIANO_BUTTONS[i];
+                const midiVal = gamepadMidiNotes[i] + currentTranspose;
+                const noteName = midiToNote(midiVal);
                 DYNAMIC_BUTTON_MAP[btnIndex] = {
-                    id: 'key-' + btnIndex,
+                    id: 'key-' + midiVal,
                     note: noteName,
                     midi: midiVal,
                     side: SIDE_MAP[btnIndex]
                 };
-
-                const keyDiv = document.createElement('div');
-                keyDiv.className = 'white-key';
-                keyDiv.id = 'key-' + btnIndex;
-                keyDiv.innerHTML = `${noteName} <div class="mapping">${BUTTON_LABELS[btnIndex]}</div>`;
-
-                keyDiv.addEventListener('pointerdown', (e) => {
-                    e.preventDefault();
-                    if (!isAudioReady || !activeEngine) return;
-
-                    activeEngine.triggerAttack(noteName);
-                    keyDiv.classList.add('active');
-                    if (noteName.includes('#')) {
-                        keyDiv.classList.add('sharp');
-                    }
-
-                    pointerActiveNotes[e.pointerId] = {
-                        note: noteName,
-                        el: keyDiv
-                    };
-
-                    try {
-                        keyDiv.setPointerCapture(e.pointerId);
-                    } catch (err) {}
-                });
-
-                keyDiv.addEventListener('pointerup', (e) => {
-                    e.preventDefault();
-                    releasePointer(e.pointerId);
-                });
-
-                keyDiv.addEventListener('pointercancel', (e) => {
-                    e.preventDefault();
-                    releasePointer(e.pointerId);
-                });
-
-                keyDiv.addEventListener('pointerleave', (e) => {
-                    e.preventDefault();
-                    releasePointer(e.pointerId);
-                });
-
-                pianoWrapper.appendChild(keyDiv);
             }
+
+            // Chromatic white-key pattern (0=white, 1=black)
+            // C  C# D  D# E  F  F# G  G# A  A# B
+            const isBlack = [false, true, false, true, false, false, true, false, true, false, true, false];
+
+            // Build gamepad MIDI set for fast lookup
+            const gamepadMidiSet = new Set(Object.values(DYNAMIC_BUTTON_MAP).map(b => b.midi));
+
+            for (let midi = KEYBOARD_START; midi <= KEYBOARD_END; midi++) {
+                const semitone = midi % 12;
+                if (isBlack[semitone]) continue; // handled as child of previous white key
+
+                const noteName = midiToNote(midi);
+                const cleanNote = noteName.replace(/\d+$/, '');
+
+                const whiteKeyDiv = document.createElement('div');
+                whiteKeyDiv.className = 'white-key';
+                whiteKeyDiv.id = 'key-' + midi;
+
+                // Label: note name + gamepad mapping if applicable
+                let labelHtml = '';
+                if (gamepadMidiSet.has(midi)) {
+                    const entry = Object.values(DYNAMIC_BUTTON_MAP).find(b => b.midi === midi);
+                    if (entry) {
+                        const btnIdx = Object.keys(DYNAMIC_BUTTON_MAP).find(k => DYNAMIC_BUTTON_MAP[k].midi === midi);
+                        labelHtml = `<div class="mapping">${BUTTON_LABELS[btnIdx]}</div>`;
+                    }
+                }
+                whiteKeyDiv.innerHTML = `<span class="note-label">${cleanNote}</span>${labelHtml}`;
+                setupPointerEvents(whiteKeyDiv, noteName);
+
+                // Check if next semitone (midi+1) is a black key
+                const nextSemitone = (midi + 1) % 12;
+                if (midi + 1 <= KEYBOARD_END && isBlack[nextSemitone]) {
+                    const blackMidi = midi + 1;
+                    const blackNoteName = midiToNote(blackMidi);
+                    const blackClean = blackNoteName.replace(/\d+$/, '');
+
+                    const blackKeyDiv = document.createElement('div');
+                    blackKeyDiv.className = 'black-key';
+                    blackKeyDiv.id = 'key-' + blackMidi;
+
+                    let blackLabel = '';
+                    if (gamepadMidiSet.has(blackMidi)) {
+                        const entry = Object.values(DYNAMIC_BUTTON_MAP).find(b => b.midi === blackMidi);
+                        if (entry) {
+                            const btnIdx = Object.keys(DYNAMIC_BUTTON_MAP).find(k => DYNAMIC_BUTTON_MAP[k].midi === blackMidi);
+                            blackLabel = `<div class="mapping">${BUTTON_LABELS[btnIdx]}</div>`;
+                        }
+                    }
+                    blackKeyDiv.innerHTML = blackLabel;
+                    setupPointerEvents(blackKeyDiv, blackNoteName);
+                    whiteKeyDiv.appendChild(blackKeyDiv);
+                }
+
+                pianoWrapper.appendChild(whiteKeyDiv);
+            }
+
+            // Auto-scroll so the active octave (baseMidi) is centered in the viewport
+            requestAnimationFrame(() => {
+                const activeKey = document.getElementById('key-' + (baseMidi + currentTranspose));
+                if (activeKey) {
+                    const wrapper = document.getElementById('piano-wrapper');
+                    const keyLeft = activeKey.offsetLeft;
+                    const wrapperWidth = wrapper.clientWidth;
+                    const keyWidth = activeKey.offsetWidth;
+                    wrapper.scrollLeft = keyLeft - (wrapperWidth / 2) + (keyWidth / 2);
+                }
+            });
 
             if (typeof regenerateChordRootWheel === 'function') {
                 regenerateChordRootWheel();
@@ -1773,6 +1945,29 @@
             }
         }
 
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    console.error(`Error attempting to enable full-screen mode: ${err.message}`);
+                });
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
+        document.addEventListener('fullscreenchange', () => {
+            const btn = document.getElementById('fullscreen-btn');
+            if (btn) {
+                if (document.fullscreenElement) {
+                    btn.innerHTML = '🗗 EXIT FULLSCREEN';
+                    btn.classList.add('active');
+                } else {
+                    btn.innerHTML = '🗖 FULLSCREEN';
+                    btn.classList.remove('active');
+                }
+            }
+        });
+
         function switchInfoTab(tabId, btn) {
             document.querySelectorAll('.info-tab-content').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.info-tab-btn').forEach(b => b.classList.remove('active'));
@@ -1930,8 +2125,101 @@
                 const angleRad = (index * angleStep - 90) * (Math.PI / 180);
                 el.style.left = `calc(50% - 25px + ${Math.cos(angleRad) * 40}%)`;
                 el.style.top = `calc(50% - 12px + ${Math.sin(angleRad) * 40}%)`;
+
+                el.addEventListener('pointerdown', (e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+
+                    if (containerId === 'wheel-left') {
+                        if (pointerLeftSegment === index) {
+                            pointerLeftSegment = null;
+                        } else {
+                            pointerLeftSegment = index;
+                        }
+                    } else if (containerId === 'wheel-right') {
+                        if (pointerRightSegment === index) {
+                            pointerRightSegment = null;
+                        } else {
+                            pointerRightSegment = index;
+                        }
+                    }
+                    updatePointerWheelVisuals();
+                });
+
                 container.appendChild(el);
             });
+        }
+
+        function updatePointerWheelVisuals() {
+            // Only clear wheel-left/right visuals for pointer-set selections.
+            // The gamepad loop handles its own active segment highlights.
+            if (pointerLeftSegment === null) {
+                document.querySelectorAll('#wheel-left .slice-label').forEach(el => el.classList.remove('active'));
+                document.getElementById('wc-left').classList.remove('active');
+            }
+            if (pointerRightSegment === null) {
+                document.querySelectorAll('#wheel-right .slice-label').forEach(el => el.classList.remove('active'));
+                document.getElementById('wc-right').classList.remove('active');
+            }
+
+            if (pointerLeftSegment !== null) {
+                const item = CHORD_ROOT_ITEMS[pointerLeftSegment];
+                if (item) {
+                    const labelEl = document.getElementById(safeLabelId('label-wheel-left', item.label));
+                    if (labelEl) labelEl.classList.add('active');
+                    document.getElementById('wc-left').classList.add('active');
+                }
+            }
+
+            if (pointerRightSegment !== null) {
+                const type = CHORD_TYPES[pointerRightSegment];
+                if (type) {
+                    const labelEl = document.getElementById(safeLabelId('label-wheel-right', type));
+                    if (labelEl) labelEl.classList.add('active');
+                    document.getElementById('wc-right').classList.add('active');
+                }
+            }
+
+            // Immediately play or stop chord when pointer segments change
+            if (!isAudioReady || !activeEngine) return;
+
+            if (pointerLeftSegment !== null && pointerRightSegment !== null) {
+                const rootItem = CHORD_ROOT_ITEMS[pointerLeftSegment];
+                const type = CHORD_TYPES[pointerRightSegment];
+                if (!rootItem || !type) return;
+
+                const rootMidi = rootItem.midi;
+                const chordId = `ptr-${rootMidi}-${type}`;
+
+                if (activeChordId !== chordId) {
+                    if (currentChordPlay === 'arpeggio') stopArpeggio();
+                    else if (currentChordPlay === 'strum') stopStrum();
+                    else if (activeChordNotes.length > 0) activeEngine.triggerRelease(activeChordNotes);
+
+                    activeChordId = chordId;
+                    chordModifier = 0;
+                    const rootNameWithMod = rootItem.label;
+                    document.getElementById('active-chord-text').innerText = `${rootNameWithMod}${type}`;
+
+                    activeChordNotes = CHORD_INTERVALS[type].map(semitone =>
+                        Tone.Frequency(rootMidi + semitone, "midi").toNote()
+                    );
+
+                    if (currentChordPlay === 'arpeggio') startArpeggio(activeChordNotes);
+                    else if (currentChordPlay === 'strum') startStrum(activeChordNotes);
+                    else {
+                        activeEngine.triggerAttack(activeChordNotes);
+                        highlightPianoKeysForChord(activeChordNotes);
+                    }
+                }
+            } else {
+                // One or both deselected — stop if we were playing a pointer chord
+                if (activeChordId && activeChordId.startsWith('ptr-')) {
+                    resetChordState();
+                    const activeChordText = document.getElementById('active-chord-text');
+                    if (activeChordText) activeChordText.innerText = '';
+                }
+            }
         }
 
         function regenerateChordRootWheel() {
@@ -2211,8 +2499,10 @@
                 updateAnalogDot('dot-left', rootState.x, rootState.y, 105);
                 updateAnalogDot('dot-right', typeState.x, typeState.y, 105);
 
-                const rootIndex = rootState.segment;
-                const typeIndex = typeState.segment;
+                // Merge gamepad stick state with pointer/touch wheel selection
+                const rootIndex = rootState.active ? rootState.segment : pointerLeftSegment;
+                const typeIndex = typeState.active ? typeState.segment : pointerRightSegment;
+                const pointerOctave = 0; // pointer selection always uses base octave
 
                 let newModifier = 0;
                 if (pad.buttons[5].pressed) {
@@ -2225,7 +2515,8 @@
 
                 if (rootIndex !== null && typeIndex !== null) {
                     const rootItem = CHORD_ROOT_ITEMS[rootIndex];
-                    const rootMidi = rootItem.midi + (rootState.octaveIndex * 12);
+                    const octaveShift = rootState.active ? rootState.octaveIndex : 0;
+                    const rootMidi = rootItem.midi + (octaveShift * 12);
                     const root = midiToNote(rootMidi);
                     const rootLabel = rootItem.label;
                     const type = CHORD_TYPES[typeIndex];
@@ -2272,7 +2563,7 @@
                             highlightPianoKeysForChord(activeChordNotes);
                         }
                     }
-                } else {
+                } else if (pointerLeftSegment === null && pointerRightSegment === null) {
                     document.getElementById('wc-left').classList.remove('active');
                     document.getElementById('wc-right').classList.remove('active');
 
