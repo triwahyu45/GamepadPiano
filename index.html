@@ -736,6 +736,7 @@
         let lastRightSegment = null;
         let lastLeftOctave = 0;
         let lastRightOctave = 0;
+        let chordTriggerLocked = false;
 
         function getStickStateWithHysteresis(rawX, rawY, totalSlices, wasActive, lastSegment, lastOctave) {
             const x = applyDeadzone(rawX);
@@ -1288,6 +1289,9 @@
             lastLeftOctave = 0;
             lastRightOctave = 0;
 
+            // Lock chord triggers until both sticks return to center
+            chordTriggerLocked = true;
+
             const activeChordText = document.getElementById('active-chord-text');
             const modifierText = document.getElementById('chord-modifier-text');
             if (activeChordText) activeChordText.innerText = '';
@@ -1498,6 +1502,11 @@
                 lastRightSegment = typeState.segment;
                 lastRightOctave = typeState.octaveIndex;
 
+                // Reset chordTriggerLocked if both sticks have returned to center
+                if (!isLeftActive && !isRightActive) {
+                    chordTriggerLocked = false;
+                }
+
                 updateAnalogDot('dot-left', rootState.x, rootState.y, 105);
                 updateAnalogDot('dot-right', typeState.x, typeState.y, 105);
 
@@ -1509,7 +1518,7 @@
                 if (pad.buttons[4].pressed && !(previousButtons[4] || false)) newModifier = -1;
                 if (pad.buttons[14].pressed || pad.buttons[15].pressed) newModifier = 0;
 
-                if (rootIndex !== null && typeIndex !== null) {
+                if (rootIndex !== null && typeIndex !== null && !chordTriggerLocked) {
                     const rootItem = CHORD_ROOT_ITEMS[rootIndex];
                     const rootMidi = rootItem.midi + (rootState.octaveIndex * 12);
                     const root = midiToNote(rootMidi);
