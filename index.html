@@ -627,6 +627,52 @@
             align-items: center;
         }
 
+        /* Transpose Control Panel */
+        .transpose-panel {
+            display: flex;
+            align-items: center;
+            background: var(--panel);
+            border: 1px solid rgba(0, 240, 192, 0.15);
+            border-radius: 4px;
+            padding: 2px;
+            min-width: 170px;
+            justify-content: space-between;
+            box-sizing: border-box;
+        }
+
+        .transpose-btn {
+            background: rgba(0, 240, 192, 0.1);
+            border: none;
+            color: var(--primary);
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            width: 32px;
+            height: 32px;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            outline: none;
+        }
+
+        .transpose-btn:hover {
+            background: var(--primary);
+            color: #000;
+        }
+
+        #transpose-val {
+            font-size: 0.8em;
+            font-weight: bold;
+            letter-spacing: 0.5px;
+            color: #88c2ad;
+            font-family: monospace;
+            user-select: none;
+            text-align: center;
+            flex: 1;
+        }
+
         .mode-tab-btn {
             background: transparent;
             border: none;
@@ -834,6 +880,8 @@
                     <li><span>Pilih Root Nada (Chord Mode)</span><span class="key">Analog Kiri (L-Stick)</span></li>
                     <li><span>Pilih Tipe Akord (Chord Mode)</span><span class="key">Analog Kanan (R-Stick)</span></li>
                     <li><span>Kombinasi Pengaturan</span><span class="key">Tahan Share + D-Pad / Shoulder / L3</span></li>
+                    <li><span>Atur Transpose (Turun/Naik)</span><span class="key">Tahan Share + ⬜ / 🔺</span></li>
+                    <li><span>Reset Transpose (0)</span><span class="key">Tahan Share + ❌</span></li>
                     <li><span>Sustain Lock</span><span class="key">Tahan Share + L2/R2</span></li>
                     <li><span>Ganti Mode Piano/Chord</span><span class="key">Tombol Options / Start</span></li>
                 </ul>
@@ -844,6 +892,7 @@
                 <ul class="info-list">
                     <li><span>Tuts Putih (Do - Si)</span><span class="key">A, S, D, F, G, H, J, K, L, ;</span></li>
                     <li><span>Tuts Hitam (Accidentals)</span><span class="key">W, E, T, Y, U, O, P</span></li>
+                    <li><span>Transpose Turun / Naik</span><span class="key">[ / ]</span></li>
                     <li><span>Ganti Instrumen</span><span class="key">Angka 1</span></li>
                     <li><span>Ganti Tangga Nada (Scale)</span><span class="key">Angka 2</span></li>
                     <li><span>Ganti Rentang Oktaf</span><span class="key">Angka 3</span></li>
@@ -858,6 +907,7 @@
                 <ul class="info-list">
                     <li><span>Memainkan Tuts</span><span>Klik langsung tuts piano di layar</span></li>
                     <li><span>Memainkan Akord</span><span>Klik segment pada roda kiri & kanan</span></li>
+                    <li><span>Ganti Transpose (- / +)</span><span>Klik tombol - / + pada kolom TRANSPOSE</span></li>
                     <li><span>Ganti Mode</span><span>Klik tab mode "PIANO MODE / CHORD MODE" di atas</span></li>
                     <li><span>Pengaturan Suara</span><span>Pilih dropdown Instrumen, Skala, Oktaf, dll.</span></li>
                     <li><span>Sustain Manual</span><span>Klik sakelar toggle Sustain di kanan atas</span></li>
@@ -947,6 +997,12 @@
                 </label>
             </div>
 
+            <div class="transpose-panel">
+                <button class="transpose-btn" onclick="adjustTranspose(-1)">-</button>
+                <span id="transpose-val">TRANSPOSE: 0</span>
+                <button class="transpose-btn" onclick="adjustTranspose(1)">+</button>
+            </div>
+
             <div class="mode-tabs-container">
                 <button class="mode-tab-btn active" data-mode="piano" onclick="setPlayMode('piano')">PIANO MODE</button>
                 <button class="mode-tab-btn" data-mode="chord" onclick="setPlayMode('chord')">CHORD MODE</button>
@@ -960,9 +1016,10 @@
         <div class="helper-text">
             <span><b>[OPTIONS]</b> Ganti Mode</span>
             <span><b>[SHARE + D-Pad/Shoulder/L3]</b> Ubah Setting</span>
+            <span><b>[SHARE + ⬜/🔺/❌]</b> Transpose -/+/Reset</span>
             <span><b>[L-Stick Y]</b> Shift L-Keys</span>
             <span><b>[R-Stick Y]</b> Shift R-Keys</span>
-            <span><b>[Keyboard 1/2/3/4/5]</b> Ubah Setting</span>
+            <span><b>[Keyboard 1-5 / [ / ]]</b> Ubah Setting / Transpose</span>
             <span><b>[Chord L-Stick Radius]</b> Pilih Octave</span>
         </div>
     </div>
@@ -1007,6 +1064,7 @@
 
         let currentScale = localStorage.getItem('gamepad_piano_scale') || 'major';
         let currentRange = parseInt(localStorage.getItem('gamepad_piano_range')) || 2;
+        let currentTranspose = parseInt(localStorage.getItem('gamepad_piano_transpose')) || 0;
         let baseMidi = 60; // Start at C4
         let DYNAMIC_BUTTON_MAP = {};
         let isInitializing = false;
@@ -1027,6 +1085,12 @@
             document.getElementById('scale-select').value = currentScale;
             document.getElementById('range-select').value = currentRange.toString();
             document.getElementById('chord-play-select').value = currentChordPlay;
+            
+            const transValEl = document.getElementById('transpose-val');
+            if (transValEl) {
+                transValEl.innerText = `TRANSPOSE: ${currentTranspose > 0 ? '+' : ''}${currentTranspose}`;
+            }
+
             const savedSustain = localStorage.getItem('gamepad_piano_sustain');
             if (savedSustain !== null) {
                 document.getElementById('sustain-toggle').checked = savedSustain === 'true';
@@ -1189,7 +1253,7 @@
 
             for (let i = 0; i < visibleNotes.length; i++) {
                 const btnIndex = PIANO_BUTTONS[i];
-                const midiVal = visibleNotes[i];
+                const midiVal = visibleNotes[i] + currentTranspose;
                 const noteName = midiToNote(midiVal);
 
                 DYNAMIC_BUTTON_MAP[btnIndex] = {
@@ -1485,6 +1549,16 @@
             select.dispatchEvent(new Event('change'));
         }
 
+        function adjustTranspose(amount) {
+            currentTranspose = Math.max(-12, Math.min(12, currentTranspose + amount));
+            localStorage.setItem('gamepad_piano_transpose', currentTranspose);
+            const valEl = document.getElementById('transpose-val');
+            if (valEl) {
+                valEl.innerText = `TRANSPOSE: ${currentTranspose > 0 ? '+' : ''}${currentTranspose}`;
+            }
+            regeneratePianoKeys();
+        }
+
         function setPlayMode(mode) {
             if (!isAudioReady || !activeEngine) return;
             currentMode = mode;
@@ -1553,6 +1627,10 @@
                 cycleChordPlay(1);
             } else if (e.key.toLowerCase() === 'm') {
                 setPlayMode(currentMode === 'piano' ? 'chord' : 'piano');
+            } else if (e.key === '[') {
+                adjustTranspose(-1);
+            } else if (e.key === ']') {
+                adjustTranspose(1);
             }
         });
 
@@ -1639,7 +1717,7 @@
             // Label wheel cukup satu putaran scale supaya tidak terlalu penuh.
             // Range tetap ngaruh lewat radius stick: dekat tengah = oktaf rendah, luar = oktaf tinggi.
             CHORD_ROOT_ITEMS = scale.map(semitone => {
-                const midi = baseMidi + semitone;
+                const midi = baseMidi + semitone + currentTranspose;
                 return {
                     semitone,
                     midi,
@@ -1807,6 +1885,19 @@
                 // 5. L3 (10) -> Cycle Chord Play Mode
                 if (pad.buttons[10] && pad.buttons[10].pressed && !(previousButtons[10] || false)) {
                     cycleChordPlay(1);
+                }
+
+                // 6. Share + Square (2) -> Transpose Down
+                if (pad.buttons[2] && pad.buttons[2].pressed && !(previousButtons[2] || false)) {
+                    adjustTranspose(-1);
+                }
+                // 7. Share + Triangle (3) -> Transpose Up
+                if (pad.buttons[3] && pad.buttons[3].pressed && !(previousButtons[3] || false)) {
+                    adjustTranspose(1);
+                }
+                // 8. Share + Cross (0) -> Reset Transpose
+                if (pad.buttons[0] && pad.buttons[0].pressed && !(previousButtons[0] || false)) {
+                    adjustTranspose(-currentTranspose);
                 }
 
                 for (let i = 0; i < pad.buttons.length; i++) {
