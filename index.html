@@ -920,11 +920,12 @@
 
         window.addEventListener('keydown', (e) => {
             if (isOverlayVisible) {
-                if (e.code === 'Space' || e.code === 'Enter') {
+                // Cegah default untuk tombol Space agar halaman tidak bergulir
+                if (e.code === 'Space') {
                     e.preventDefault();
-                    if (!isInitializing) {
-                        document.getElementById('start-btn').click();
-                    }
+                }
+                if (!isInitializing) {
+                    document.getElementById('start-btn').click();
                 }
                 return;
             }
@@ -1108,11 +1109,12 @@
         let currentMode = 'piano';
 
         worker.onmessage = function () {
-            // Cek jika overlay inisialisasi masih aktif dan user menekan tombol Cross (X) pada gamepad
+            // Cek jika overlay inisialisasi masih aktif dan user menekan tombol APAPUN pada gamepad
             if (isOverlayVisible && gamepadIndex !== null) {
                 const pad = navigator.getGamepads()[gamepadIndex];
                 if (pad) {
-                    if (pad.buttons[0] && pad.buttons[0].pressed && !isInitializing) {
+                    const anyButtonPressed = pad.buttons.some(btn => btn && btn.pressed);
+                    if (anyButtonPressed && !isInitializing) {
                         document.getElementById('start-btn').click();
                         return;
                     }
