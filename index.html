@@ -343,7 +343,8 @@
         #mode-container.mode-chord .chord-wheels {
             opacity: 1;
             pointer-events: auto;
-            transform: translate(-50%, -50%) scale(0.8);
+            /* scale(1) = full size, wheels are fluid so they already fill width */
+            transform: translate(-50%, -50%) scale(1);
         }
 
         #mode-container.mode-chord .chord-display-area {
@@ -571,9 +572,12 @@
         /* UI Radial Neo */
         .chord-wheels {
             display: flex;
-            gap: 80px;
+            gap: 0;
             width: 100%;
-            justify-content: center;
+            justify-content: space-evenly;
+            align-items: center;
+            padding: 0 20px;
+            box-sizing: border-box;
             position: absolute;
             left: 50%;
             top: 195px;
@@ -583,8 +587,10 @@
         }
 
         .wheel {
-            width: 280px;
-            height: 280px;
+            /* fluid sizing: as big as half the container minus gap, capped at 300px */
+            width: min(42%, 300px);
+            height: min(42%, 300px);
+            aspect-ratio: 1;
             border-radius: 50%;
             background: radial-gradient(circle, rgba(0, 255, 213, 0.05) 0%, rgba(0, 0, 0, 0.5) 100%);
             border: 1px solid rgba(0, 255, 213, 0.3);
@@ -593,6 +599,7 @@
             align-items: center;
             justify-content: center;
             box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.9), 0 0 30px rgba(0, 0, 0, 0.5);
+            flex-shrink: 0;
         }
 
         .wheel::before {
@@ -959,10 +966,10 @@
                 transform-origin: top center;
             }
 
+            /* fluid wheels already fill width — just adjust position */
             #mode-container.mode-chord .chord-wheels {
-                transform: translate(-50%, -50%) scale(0.68);
+                transform: translate(-50%, -50%) scale(1);
                 top: 155px;
-                gap: 30px;
             }
 
             #mode-container.mode-chord .chord-display-area {
@@ -982,14 +989,13 @@
             }
 
             #mode-container.mode-chord .piano-wrapper-scroll {
-                transform: translate(-50%, 290px) scale(0.44);
+                transform: translate(-50%, 280px) scale(0.44);
                 transform-origin: top center;
             }
 
             #mode-container.mode-chord .chord-wheels {
-                transform: translate(-50%, -50%) scale(0.52);
-                top: 145px;
-                gap: 15px;
+                transform: translate(-50%, -50%) scale(1);
+                top: 140px;
             }
 
             #mode-container.mode-chord .chord-display-area {
@@ -2511,8 +2517,10 @@
                 lastRightSegment = typeState.segment;
                 lastRightOctave = typeState.octaveIndex;
 
-                updateAnalogDot('dot-left', rootState.x, rootState.y, 105);
-                updateAnalogDot('dot-right', typeState.x, typeState.y, 105);
+                const wheelEl = document.getElementById('wheel-left');
+                const dotRadius = wheelEl ? (wheelEl.offsetWidth / 2) * 0.72 : 105;
+                updateAnalogDot('dot-left', rootState.x, rootState.y, dotRadius);
+                updateAnalogDot('dot-right', typeState.x, typeState.y, dotRadius);
 
                 // Merge gamepad stick state with pointer/touch wheel selection
                 const rootIndex = rootState.active ? rootState.segment : pointerLeftSegment;
