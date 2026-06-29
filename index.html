@@ -1013,6 +1013,7 @@
         let currentChordPlay = localStorage.getItem('gamepad_piano_chord_play') || 'block';
         let arpeggioIntervalId = null;
         let arpeggioActiveNotes = [];
+        let strumTimeouts = [];
 
         // Sinkronisasi nilai kontrol UI dengan localStorage saat pertama kali dimuat
         document.addEventListener('DOMContentLoaded', () => {
@@ -1036,7 +1037,6 @@
         let lastRightSegment = null;
         let lastLeftOctave = 0;
         let lastRightOctave = 0;
-        let chordTriggerLocked = false;
 
         function getStickStateWithHysteresis(rawX, rawY, totalSlices, wasActive, lastSegment, lastOctave) {
             const x = applyDeadzone(rawX);
@@ -1114,6 +1114,29 @@
                 activeEngine.releaseAll();
             }
             arpeggioActiveNotes = [];
+        }
+
+        function startStrum(notes) {
+            stopStrum();
+            const isSustain = document.getElementById('sustain-toggle').checked;
+            const strumDuration = isSustain ? 1.5 : 0.35;
+            
+            notes.forEach((note, index) => {
+                const timeoutId = setTimeout(() => {
+                    if (activeEngine) {
+                        activeEngine.triggerAttackRelease(note, strumDuration);
+                    }
+                }, index * 45); // Jeda 45ms per nada genjrengan
+                strumTimeouts.push(timeoutId);
+            });
+        }
+
+        function stopStrum() {
+            strumTimeouts.forEach(id => clearTimeout(id));
+            strumTimeouts = [];
+            if (activeEngine) {
+                activeEngine.releaseAll();
+            }
         }
 
         function midiToNote(midi) {
@@ -1631,6 +1654,8 @@
         function resetChordState() {
             if (currentChordPlay === 'arpeggio') {
                 stopArpeggio();
+            } else if (currentChordPlay === 'strum') {
+                stopStrum();
             } else {
                 if (activeChordNotes.length > 0 && activeEngine) {
                     activeEngine.triggerRelease(activeChordNotes);
@@ -1648,9 +1673,6 @@
             lastRightSegment = null;
             lastLeftOctave = 0;
             lastRightOctave = 0;
-
-            // Lock chord triggers until both sticks return to center
-            chordTriggerLocked = true;
 
             const activeChordText = document.getElementById('active-chord-text');
             const modifierText = document.getElementById('chord-modifier-text');
@@ -1854,11 +1876,6 @@
                 lastRightSegment = typeState.segment;
                 lastRightOctave = typeState.octaveIndex;
 
-                // Reset chordTriggerLocked if both sticks have returned to center
-                if (!isLeftActive && !isRightActive) {
-                    chordTriggerLocked = false;
-                }
-
                 updateAnalogDot('dot-left', rootState.x, rootState.y, 105);
                 updateAnalogDot('dot-right', typeState.x, typeState.y, 105);
 
@@ -1870,7 +1887,7 @@
                 if (pad.buttons[4].pressed && !(previousButtons[4] || false)) newModifier = -1;
                 if (pad.buttons[14].pressed || pad.buttons[15].pressed) newModifier = 0;
 
-                if (rootIndex !== null && typeIndex !== null && !chordTriggerLocked) {
+                if (rootIndex !== null && typeIndex !== null) {
                     const rootItem = CHORD_ROOT_ITEMS[rootIndex];
                     const rootMidi = rootItem.midi + (rootState.octaveIndex * 12);
                     const root = midiToNote(rootMidi);
@@ -1885,6 +1902,8 @@
                     if (activeChordId !== chordId) {
                         if (currentChordPlay === 'arpeggio') {
                             stopArpeggio();
+                        } else if (currentChordPlay === 'strum') {
+                            stopStrum();
                         } else {
                             if (activeChordNotes.length > 0) activeEngine.triggerRelease(activeChordNotes);
                         }
@@ -1909,11 +1928,7 @@
                         if (currentChordPlay === 'arpeggio') {
                             startArpeggio(activeChordNotes);
                         } else if (currentChordPlay === 'strum') {
-                            const isSustain = document.getElementById('sustain-toggle').checked;
-                            const strumDuration = isSustain ? 1.5 : 0.35;
-                            activeChordNotes.forEach((note, index) => {
-                                activeEngine.triggerAttackRelease(note, strumDuration, Tone.now() + (index * 0.045));
-                            });
+                            startStrum(activeChordNotes);
                         } else {
                             activeEngine.triggerAttack(activeChordNotes);
                         }
