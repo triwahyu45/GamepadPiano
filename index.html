@@ -262,7 +262,7 @@
             width: 100%;
             max-width: 950px;
             position: relative;
-            height: 490px;
+            height: 420px;
             background: var(--panel);
             border: 1px solid #1a332a;
             border-radius: 8px;
@@ -288,14 +288,13 @@
 
         .piano-wrapper {
             display: flex;
-            height: 220px;
+            height: 300px;
             background: #000;
-            padding: 15px 15px 10px;
-            gap: 4px;
+            padding: 12px 18px 8px;
+            gap: 5px;
             overflow-x: auto;
             overflow-y: hidden;
             scroll-behavior: smooth;
-            /* Hide scrollbar on webkit, show on Firefox via thin */
             scrollbar-width: thin;
             scrollbar-color: #1e3f34 #000;
         }
@@ -313,9 +312,8 @@
 
         /* Piano Mode States */
         #mode-container.mode-piano .piano-wrapper-scroll {
-            transform: translate(-50%, 125px) scale(1);
+            transform: translate(-50%, 65px) scale(1);
         }
-        /* The .piano-wrapper itself never needs to move — the .piano-wrapper-scroll does */
         #mode-container.mode-piano .piano-wrapper-scroll {
             opacity: 1;
         }
@@ -333,7 +331,7 @@
 
         /* Chord Mode States */
         #mode-container.mode-chord .piano-wrapper-scroll {
-            transform: translate(-50%, 295px) scale(0.82);
+            transform: translate(-50%, 330px) scale(0.75);
             transform-origin: top center;
         }
 
@@ -350,24 +348,26 @@
         }
 
         .white-key {
-            width: 60px;
+            width: 80px;
+            min-width: 80px;
             height: 100%;
-            background: linear-gradient(180deg, #dddddd 0%, #ffffff 100%);
-            border-radius: 2px 2px 6px 6px;
+            background: linear-gradient(180deg, #d8d8d8 0%, #ffffff 60%, #f0f0f0 100%);
+            border-radius: 3px 3px 8px 8px;
             display: flex;
             flex-direction: column;
             justify-content: flex-end;
             align-items: center;
-            padding-bottom: 15px;
+            padding-bottom: 18px;
             color: #000;
             font-weight: 800;
             transition: transform 0.05s, box-shadow 0.05s;
             position: relative;
-            box-shadow: inset -4px 0 5px rgba(0,0,0,0.08), inset 0 -4px 5px rgba(0, 0, 0, 0.2), 0 5px 10px rgba(0, 0, 0, 0.5);
+            box-shadow: inset -4px 0 6px rgba(0,0,0,0.10), inset 0 -5px 6px rgba(0, 0, 0, 0.18), 0 6px 14px rgba(0, 0, 0, 0.55);
             z-index: 1;
-            border: 1px solid #999;
+            border: 1px solid #aaa;
             cursor: pointer;
             touch-action: none;
+            flex-shrink: 0;
         }
 
         .white-key.active {
@@ -380,23 +380,24 @@
         .black-key {
             position: absolute;
             top: 0;
-            right: -13px; /* Float halfway over the next key */
-            width: 26px;
-            height: 135px; /* Shorter than white keys */
-            background: linear-gradient(180deg, #111 0%, #333 100%);
+            right: -18px; /* Float halfway over the next white key */
+            width: 36px;
+            height: 175px;
+            background: linear-gradient(180deg, #111 0%, #2a2a2a 60%, #111 100%);
             border: 1px solid #000;
-            border-radius: 0 0 3px 3px;
+            border-radius: 0 0 5px 5px;
             z-index: 10;
             cursor: pointer;
             touch-action: none;
-            box-shadow: inset 0 -3px 5px rgba(0, 0, 0, 0.6), 0 3px 6px rgba(0, 0, 0, 0.8);
+            box-shadow: inset 0 -4px 6px rgba(0, 0, 0, 0.7), 0 4px 8px rgba(0, 0, 0, 0.9);
             transition: transform 0.05s, background 0.05s, box-shadow 0.05s;
             display: flex;
             flex-direction: column;
             justify-content: flex-end;
             align-items: center;
-            padding-bottom: 8px;
+            padding-bottom: 10px;
             box-sizing: border-box;
+            flex-shrink: 0;
         }
 
         .black-key.active {
@@ -407,8 +408,8 @@
         }
 
         .note-label {
-            font-size: 0.85em;
-            color: #333;
+            font-size: 0.95em;
+            color: #444;
             user-select: none;
             pointer-events: none;
             font-weight: 800;
@@ -935,16 +936,16 @@
             }
             
             #mode-container {
-                height: 490px;
+                height: 420px;
             }
 
-            #mode-container.mode-piano .piano-wrapper {
-                transform: translate(-50%, 135px) scale(0.72);
+            #mode-container.mode-piano .piano-wrapper-scroll {
+                transform: translate(-50%, 65px) scale(0.75);
                 transform-origin: top center;
             }
 
-            #mode-container.mode-chord .piano-wrapper {
-                transform: translate(-50%, 310px) scale(0.65);
+            #mode-container.mode-chord .piano-wrapper-scroll {
+                transform: translate(-50%, 330px) scale(0.62);
                 transform-origin: top center;
             }
 
@@ -961,13 +962,13 @@
         }
 
         @media (max-width: 500px) {
-            #mode-container.mode-piano .piano-wrapper {
-                transform: translate(-50%, 145px) scale(0.55);
+            #mode-container.mode-piano .piano-wrapper-scroll {
+                transform: translate(-50%, 65px) scale(0.56);
                 transform-origin: top center;
             }
 
-            #mode-container.mode-chord .piano-wrapper {
-                transform: translate(-50%, 315px) scale(0.48);
+            #mode-container.mode-chord .piano-wrapper-scroll {
+                transform: translate(-50%, 330px) scale(0.44);
                 transform-origin: top center;
             }
 
