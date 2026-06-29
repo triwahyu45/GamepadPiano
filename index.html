@@ -349,12 +349,21 @@
         }
 
         /* Layar Splash GitHub */
-        .profile-container {
+        .welcome-card {
+            background: rgba(10, 20, 17, 0.88);
+            border: 1px solid rgba(0, 255, 213, 0.2);
+            padding: 35px 40px;
+            border-radius: 20px;
+            max-width: 550px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6), 0 0 25px rgba(0, 255, 213, 0.08);
+            backdrop-filter: blur(15px);
             display: flex;
+            flex-direction: column;
             align-items: center;
-            gap: 15px;
-            margin-bottom: 30px;
-            animation: float 3s ease-in-out infinite;
+            gap: 22px;
+            animation: float 4s ease-in-out infinite;
         }
 
         @keyframes float {
@@ -363,7 +372,7 @@
             }
 
             50% {
-                transform: translateY(-10px);
+                transform: translateY(-8px);
             }
 
             100% {
@@ -371,25 +380,73 @@
             }
         }
 
+        .app-welcome-title {
+            margin: 0;
+            font-size: 2.2em;
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            text-shadow: 0 0 15px var(--primary-dim);
+        }
+
+        .app-desc {
+            color: #b0c4de;
+            font-size: 0.98em;
+            line-height: 1.6;
+            margin: 0;
+        }
+
+        .profile-container {
+            display: flex;
+            align-items: center;
+            text-align: left;
+            gap: 20px;
+            background: rgba(255, 255, 255, 0.03);
+            padding: 15px 20px;
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            width: 100%;
+            box-sizing: border-box;
+        }
+
         .profile-pic {
-            width: 80px;
-            height: 80px;
+            width: 70px;
+            height: 70px;
             border-radius: 50%;
             border: 2px solid var(--primary);
-            box-shadow: 0 0 20px var(--primary-dim);
+            box-shadow: 0 0 15px var(--primary-dim);
+            flex-shrink: 0;
         }
 
         .profile-info h1 {
             margin: 0;
-            font-size: 1.8em;
+            font-size: 1.3em;
             color: var(--primary);
             letter-spacing: 1px;
         }
 
-        .profile-info p {
-            margin: 5px 0 0 0;
-            color: #88c2ad;
+        .profile-bio {
+            margin: 4px 0 6px 0;
+            font-size: 0.85em;
+            color: #a0b2aa;
+            line-height: 1.5;
+        }
+
+        .profile-link {
+            margin: 0;
+        }
+
+        .profile-link a {
+            color: var(--primary);
+            text-decoration: none;
             font-family: monospace;
+            font-size: 0.85em;
+            transition: opacity 0.2s;
+        }
+
+        .profile-link a:hover {
+            opacity: 0.8;
+            text-decoration: underline;
         }
 
         #splash-loading {
@@ -566,22 +623,27 @@
 <body>
 
     <div id="init-overlay">
-        <div class="profile-container">
-            <a href="https://github.com/triwahyu45" target="_blank" rel="noopener noreferrer">
-                <img class="profile-pic" src="https://github.com/triwahyu45.png" alt="Profile">
-            </a>
-            <div class="profile-info">
-                <h1>Tri Wahyu</h1>
-                <p><a href="https://github.com/triwahyu45" target="_blank" rel="noopener noreferrer"
-                        style="color: inherit; text-decoration: none;">github.com/triwahyu45</a></p>
+        <div class="welcome-card">
+            <h2 class="app-welcome-title">Gamepad Piano</h2>
+            <p class="app-desc">Mainkan piano, tangga nada, dan akord secara interaktif menggunakan gamepad (stik game) maupun keyboard komputer Anda. Dilengkapi dengan 14+ instrumen berkualitas tinggi.</p>
+            
+            <div class="profile-container">
+                <a href="https://github.com/triwahyu45" target="_blank" rel="noopener noreferrer">
+                    <img class="profile-pic" src="https://github.com/triwahyu45.png" alt="Profile">
+                </a>
+                <div class="profile-info">
+                    <h1>Tri Wahyu</h1>
+                    <p class="profile-bio">Mahasiswa Universitas Negeri Yogyakarta yang berfokus pada inovasi interaksi musik digital berbasis peranti masukan alternatif.</p>
+                    <p class="profile-link"><a href="https://github.com/triwahyu45" target="_blank" rel="noopener noreferrer">github.com/triwahyu45</a></p>
+                </div>
             </div>
-        </div>
-        <button id="start-btn">TAP TO START SYSTEM</button>
-        <div id="splash-loading">
-            <div style="color: var(--primary); letter-spacing: 2px; font-size: 0.9em; margin-bottom: 5px;">MENGUNDUH
-                ASSET...</div>
-            <div class="splash-progress-bg">
-                <div id="splash-progress-bar"></div>
+            
+            <button id="start-btn">TAP TO START SYSTEM</button>
+            <div id="splash-loading">
+                <div style="color: var(--primary); letter-spacing: 2px; font-size: 0.9em; margin-bottom: 5px;">MENGUNDUH ASSET...</div>
+                <div class="splash-progress-bg">
+                    <div id="splash-progress-bar"></div>
+                </div>
             </div>
         </div>
     </div>
