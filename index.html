@@ -1976,10 +1976,12 @@
                 const rootIndex = rootState.segment;
                 const typeIndex = typeState.segment;
 
-                let newModifier = chordModifier;
-                if (pad.buttons[5].pressed && !(previousButtons[5] || false)) newModifier = 1;
-                if (pad.buttons[4].pressed && !(previousButtons[4] || false)) newModifier = -1;
-                if (pad.buttons[14].pressed || pad.buttons[15].pressed) newModifier = 0;
+                let newModifier = 0;
+                if (pad.buttons[5].pressed) {
+                    newModifier = 1;  // R1 -> Sharp (♯)
+                } else if (pad.buttons[4].pressed) {
+                    newModifier = -1; // L1 -> Flat (♭)
+                }
 
                 if (rootIndex !== null && typeIndex !== null) {
                     const rootItem = CHORD_ROOT_ITEMS[rootIndex];
