@@ -706,13 +706,15 @@
         function generateContiguousScaleNotes(count) {
             const scale = SCALES[currentScale] || SCALES.major;
             const notes = [];
-            let octaveOffset = 0;
-            while (notes.length < count) {
-                for (let i = 0; i < scale.length; i++) {
-                    notes.push(baseMidi + (octaveOffset * 12) + scale[i]);
-                    if (notes.length === count) break;
-                }
-                octaveOffset++;
+            const S = scale.length;
+            
+            // Kita ingin D-Down (index 2) adalah baseMidi (Do).
+            // Jadi kita mulai dari k = -2 sampai k = count - 3.
+            for (let i = 0; i < count; i++) {
+                const k = i - 2;
+                const O = Math.floor(k / S);
+                const I = ((k % S) + S) % S;
+                notes.push(baseMidi + O * 12 + scale[I]);
             }
             return notes;
         }
