@@ -317,10 +317,7 @@
 
         /* Piano Mode States */
         #mode-container.mode-piano .piano-wrapper-scroll {
-            transform: translate(-50%, 65px) scale(1);
-        }
-        #mode-container.mode-piano .piano-wrapper-scroll {
-            opacity: 1;
+            transform: translate(-50%, 65px);
         }
         #mode-container.mode-piano .chord-wheels {
             opacity: 0;
@@ -334,10 +331,20 @@
             transform: translate(-50%, -50%) scale(0.6);
         }
 
-        /* Chord Mode States */
+        /* Chord Mode States — piano slides down full width, just shorter height */
         #mode-container.mode-chord .piano-wrapper-scroll {
-            transform: translate(-50%, 350px) scale(0.72);
+            transform: translate(-50%, 390px);
             transform-origin: top center;
+        }
+
+        /* Shrink piano height in chord mode so it fits below the wheels */
+        #mode-container.mode-chord .piano-wrapper {
+            height: 155px;
+        }
+
+        /* Black keys scale to 60% of the chord-mode piano height (155 × 0.60 ≈ 93px) */
+        #mode-container.mode-chord .black-key {
+            height: 93px;
         }
 
         #mode-container.mode-chord .chord-wheels {
@@ -386,16 +393,16 @@
         .black-key {
             position: absolute;
             top: 0;
-            right: -18px; /* Float halfway over the next white key */
-            width: 36px;
-            height: 175px;
-            background: linear-gradient(180deg, #111 0%, #2a2a2a 60%, #111 100%);
+            right: -27px; /* Centers the black key across the gap between white keys */
+            width: 48px;
+            height: 180px; /* 60% of white key height */
+            background: linear-gradient(180deg, #111 0%, #2a2a2a 55%, #1a1a1a 100%);
             border: 1px solid #000;
-            border-radius: 0 0 5px 5px;
+            border-radius: 0 0 6px 6px;
             z-index: 10;
             cursor: pointer;
             touch-action: none;
-            box-shadow: inset 0 -4px 6px rgba(0, 0, 0, 0.7), 0 4px 8px rgba(0, 0, 0, 0.9);
+            box-shadow: inset 2px 0 4px rgba(255,255,255,0.04), inset -2px 0 4px rgba(0,0,0,0.6), inset 0 -5px 8px rgba(0, 0, 0, 0.8), 0 6px 10px rgba(0, 0, 0, 0.9);
             transition: transform 0.05s, background 0.05s, box-shadow 0.05s;
             display: flex;
             flex-direction: column;
