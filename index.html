@@ -13,8 +13,8 @@
             --primary: #00f0c0; /* Softer, sleeker mint teal */
             --primary-dim: rgba(0, 240, 192, 0.12);
             --accent: #ff0055;
-            --bg: #020404; /* Ultra dark luxurious black */
-            --panel: #070e0d; /* Extremely dark panel background */
+            --bg: #000000; /* Pure pitch black */
+            --panel: #030606; /* Extremely dark panel background */
         }
 
         body {
@@ -29,7 +29,7 @@
             min-height: 100vh;
             box-sizing: border-box;
             margin: 0;
-            background-image: radial-gradient(circle at 50% 0%, #071714 0%, var(--bg) 80%);
+            background-image: radial-gradient(circle at 50% 0%, #010c0a 0%, var(--bg) 90%);
         }
 
         #init-overlay {
@@ -255,7 +255,7 @@
             width: 100%;
             max-width: 950px;
             position: relative;
-            height: 470px;
+            height: 490px;
             background: var(--panel);
             border: 1px solid #1a332a;
             border-radius: 8px;
@@ -285,7 +285,7 @@
 
         /* Piano Mode States */
         #mode-container.mode-piano .piano-wrapper {
-            transform: translate(-50%, 125px) scale(1);
+            transform: translate(-50%, 135px) scale(1);
         }
 
         #mode-container.mode-piano .chord-wheels {
@@ -302,14 +302,14 @@
 
         /* Chord Mode States */
         #mode-container.mode-chord .piano-wrapper {
-            transform: translate(-50%, 280px) scale(0.82);
+            transform: translate(-50%, 295px) scale(0.82);
             transform-origin: top center;
         }
 
         #mode-container.mode-chord .chord-wheels {
             opacity: 1;
             pointer-events: auto;
-            transform: translate(-50%, -50%) scale(0.95);
+            transform: translate(-50%, -50%) scale(0.8);
         }
 
         #mode-container.mode-chord .chord-display-area {
@@ -421,6 +421,7 @@
             font-size: 0.98em;
             line-height: 1.6;
             margin: 0;
+            text-align: justify;
         }
 
         .profile-container {
@@ -457,6 +458,7 @@
             font-size: 0.85em;
             color: #a0b2aa;
             line-height: 1.5;
+            text-align: justify;
         }
 
         .profile-link {
@@ -509,7 +511,7 @@
             justify-content: center;
             position: absolute;
             left: 50%;
-            top: 32%;
+            top: 195px;
             transform: translate(-50%, -50%);
             will-change: transform, opacity;
             transition: all 0.5s cubic-bezier(0.25, 1, 0.5, 1);
@@ -605,7 +607,7 @@
         .chord-display-area {
             position: absolute;
             left: 50%;
-            top: 32%;
+            top: 45px;
             transform: translate(-50%, -50%);
             display: flex;
             align-items: center;
@@ -858,41 +860,51 @@
             }
             
             #mode-container {
-                height: 480px;
+                height: 490px;
             }
 
             #mode-container.mode-piano .piano-wrapper {
-                transform: translate(-50%, 130px) scale(0.72);
+                transform: translate(-50%, 135px) scale(0.72);
                 transform-origin: top center;
             }
 
             #mode-container.mode-chord .piano-wrapper {
-                transform: translate(-50%, 300px) scale(0.48);
+                transform: translate(-50%, 310px) scale(0.65);
                 transform-origin: top center;
             }
 
             #mode-container.mode-chord .chord-wheels {
-                transform: translate(-50%, -50%) scale(0.6);
+                transform: translate(-50%, -50%) scale(0.68);
+                top: 180px;
+                gap: 30px;
+            }
+
+            #mode-container.mode-chord .chord-display-area {
+                transform: translate(-50%, -50%) scale(0.9);
+                top: 40px;
+            }
+        }
+
+        @media (max-width: 500px) {
+            #mode-container.mode-piano .piano-wrapper {
+                transform: translate(-50%, 145px) scale(0.55);
+                transform-origin: top center;
+            }
+
+            #mode-container.mode-chord .piano-wrapper {
+                transform: translate(-50%, 315px) scale(0.48);
+                transform-origin: top center;
+            }
+
+            #mode-container.mode-chord .chord-wheels {
+                transform: translate(-50%, -50%) scale(0.52);
+                top: 175px;
                 gap: 15px;
             }
 
             #mode-container.mode-chord .chord-display-area {
                 transform: translate(-50%, -50%) scale(0.75);
-            }
-            
-            .wheel {
-                width: 220px;
-                height: 220px;
-            }
-
-            .slice-label {
-                font-size: 0.95em;
-                width: 40px;
-            }
-
-            .wheel-center {
-                width: 60px;
-                height: 60px;
+                top: 35px;
             }
         }
     </style>
