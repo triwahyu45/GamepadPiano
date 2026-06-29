@@ -717,17 +717,32 @@
         const BUTTON_LABELS = { 6: 'L2', 4: 'L1', 13: 'D-Down', 0: 'Cross', 14: 'D-Left', 2: 'Square', 15: 'D-Right', 1: 'Circle', 12: 'D-Up', 3: 'Triangle', 5: 'R1', 7: 'R2' };
         const SIDE_MAP = { 6: 'left', 4: 'left', 13: 'left', 0: 'right', 14: 'left', 2: 'right', 15: 'left', 1: 'right', 12: 'left', 3: 'right', 5: 'right', 7: 'right' };
 
-        let currentScale = 'major';
-        let currentRange = 2;
+        let currentScale = localStorage.getItem('gamepad_piano_scale') || 'major';
+        let currentRange = parseInt(localStorage.getItem('gamepad_piano_range')) || 2;
         let baseMidi = 60; // Start at C4
         let DYNAMIC_BUTTON_MAP = {};
         let isInitializing = false;
         let isOverlayVisible = true;
 
         // --- Variabel State Analog / Chord Play ---
-        let currentChordPlay = 'block'; // 'block', 'strum', 'arpeggio'
+        let currentChordPlay = localStorage.getItem('gamepad_piano_chord_play') || 'block';
         let arpeggioIntervalId = null;
         let arpeggioActiveNotes = [];
+
+        // Sinkronisasi nilai kontrol UI dengan localStorage saat pertama kali dimuat
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedInstrument = localStorage.getItem('gamepad_piano_instrument');
+            if (savedInstrument) {
+                document.getElementById('instrument-select').value = savedInstrument;
+            }
+            document.getElementById('scale-select').value = currentScale;
+            document.getElementById('range-select').value = currentRange.toString();
+            document.getElementById('chord-play-select').value = currentChordPlay;
+            const savedSustain = localStorage.getItem('gamepad_piano_sustain');
+            if (savedSustain !== null) {
+                document.getElementById('sustain-toggle').checked = savedSustain === 'true';
+            }
+        });
 
         // Hysteresis states untuk analog stick chord mode
         let isLeftActive = false;
@@ -1093,8 +1108,18 @@
 
             try {
                 await Tone.start();
+
+                // Ambil instrumen dan sustain yang tersimpan
+                const savedInstrument = localStorage.getItem('gamepad_piano_instrument') || document.getElementById('instrument-select').value;
+                document.getElementById('instrument-select').value = savedInstrument;
+
+                const savedSustain = localStorage.getItem('gamepad_piano_sustain');
+                if (savedSustain !== null) {
+                    document.getElementById('sustain-toggle').checked = savedSustain === 'true';
+                }
+
                 regeneratePianoKeys(); // Render keys pertama kali
-                await switchInstrument(document.getElementById('instrument-select').value, true);
+                await switchInstrument(savedInstrument, true);
                 updateGamepadStatus();
             } catch (error) {
                 console.error(error);
@@ -1176,21 +1201,25 @@
         });
 
         document.getElementById('instrument-select').addEventListener('change', async (e) => {
+            localStorage.setItem('gamepad_piano_instrument', e.target.value);
             await switchInstrument(e.target.value);
         });
 
         document.getElementById('scale-select').addEventListener('change', (e) => {
             currentScale = e.target.value;
+            localStorage.setItem('gamepad_piano_scale', currentScale);
             regeneratePianoKeys();
         });
 
         document.getElementById('range-select').addEventListener('change', (e) => {
             currentRange = parseInt(e.target.value);
+            localStorage.setItem('gamepad_piano_range', currentRange);
             regeneratePianoKeys();
         });
 
         document.getElementById('sustain-toggle').addEventListener('change', (e) => {
             const releaseTime = e.target.checked ? 2.5 : 0.1;
+            localStorage.setItem('gamepad_piano_sustain', e.target.checked);
             if (activeEngine) {
                 if (activeEngine.name === "Sampler") activeEngine.release = releaseTime;
                 else activeEngine.set({ envelope: { release: releaseTime } });
@@ -1199,6 +1228,7 @@
 
         document.getElementById('chord-play-select').addEventListener('change', (e) => {
             currentChordPlay = e.target.value;
+            localStorage.setItem('gamepad_piano_chord_play', currentChordPlay);
             if (typeof resetChordState === 'function') resetChordState();
         });
 
