@@ -574,7 +574,7 @@
                         style="color: inherit; text-decoration: none;">github.com/triwahyu45</a></p>
             </div>
         </div>
-        <button id="start-btn">TAP / PRESS [SPACE] / [CROSS X] TO START</button>
+        <button id="start-btn">TAP TO START SYSTEM</button>
         <div id="splash-loading">
             <div style="color: var(--primary); letter-spacing: 2px; font-size: 0.9em; margin-bottom: 5px;">MENGUNDUH
                 ASSET...</div>
@@ -646,10 +646,11 @@
 
         <div class="helper-text">
             <span><b>[OPTIONS]</b> Ganti Mode</span>
-            <span><b>[SCALE/RANGE]</b> Ubah nada piano + chord</span>
+            <span><b>[SHARE + D-Pad/Shoulder]</b> Ubah Setting</span>
             <span><b>[L-Stick Y]</b> Shift L-Keys</span>
             <span><b>[R-Stick Y]</b> Shift R-Keys</span>
-            <span><b>[L1/R1]</b> Modulasi Chord (♭/♯)</span><span><b>[Chord L-Stick Radius]</b> Pilih Octave</span>
+            <span><b>[Keyboard 1/2/3/4]</b> Ubah Setting</span>
+            <span><b>[Chord L-Stick Radius]</b> Pilih Octave</span>
         </div>
     </div>
 
@@ -873,6 +874,41 @@
             }
         });
 
+        // --- Helper Fungsi Siklus Konfigurasi ---
+        function cycleInstrument(direction = 1) {
+            const select = document.getElementById('instrument-select');
+            if (select.disabled) return;
+            let index = select.selectedIndex + direction;
+            if (index >= select.options.length) index = 0;
+            if (index < 0) index = select.options.length - 1;
+            select.selectedIndex = index;
+            select.dispatchEvent(new Event('change'));
+        }
+
+        function cycleScale(direction = 1) {
+            const select = document.getElementById('scale-select');
+            let index = select.selectedIndex + direction;
+            if (index >= select.options.length) index = 0;
+            if (index < 0) index = select.options.length - 1;
+            select.selectedIndex = index;
+            select.dispatchEvent(new Event('change'));
+        }
+
+        function cycleRange(direction = 1) {
+            const select = document.getElementById('range-select');
+            let index = select.selectedIndex + direction;
+            if (index >= select.options.length) index = 0;
+            if (index < 0) index = select.options.length - 1;
+            select.selectedIndex = index;
+            select.dispatchEvent(new Event('change'));
+        }
+
+        function toggleSustain() {
+            const toggle = document.getElementById('sustain-toggle');
+            toggle.checked = !toggle.checked;
+            toggle.dispatchEvent(new Event('change'));
+        }
+
         window.addEventListener('keydown', (e) => {
             const overlay = document.getElementById('init-overlay');
             if (overlay && overlay.style.display !== 'none') {
@@ -880,6 +916,18 @@
                     e.preventDefault();
                     document.getElementById('start-btn').click();
                 }
+                return;
+            }
+
+            // Keyboard settings navigation
+            if (e.key === '1') {
+                cycleInstrument(1);
+            } else if (e.key === '2') {
+                cycleScale(1);
+            } else if (e.key === '3') {
+                cycleRange(1);
+            } else if (e.key === '4') {
+                toggleSustain();
             }
         });
 
@@ -1078,6 +1126,49 @@
 
                 document.getElementById('mode-piano').className = currentMode === 'piano' ? 'mode-ui active' : 'mode-ui';
                 document.getElementById('mode-chord').className = currentMode === 'chord' ? 'mode-ui active' : 'mode-ui';
+            }
+
+            // Kombinasi Tombol Gamepad untuk Mengubah Setting (Menahan Select/Share [Button 8])
+            const isModifierActive = pad.buttons[8] && pad.buttons[8].pressed;
+            if (isModifierActive) {
+                if (!(previousButtons[8] || false)) {
+                    activeEngine.releaseAll();
+                    activeNotes = {};
+                    if (typeof resetChordState === 'function') resetChordState();
+                    document.querySelectorAll('.white-key').forEach(el => { el.classList.remove('active', 'sharp', 'flat'); });
+                }
+
+                // 1. D-Up (12) / D-Down (13) -> Instrument
+                if (pad.buttons[12] && pad.buttons[12].pressed && !(previousButtons[12] || false)) {
+                    cycleInstrument(-1);
+                } else if (pad.buttons[13] && pad.buttons[13].pressed && !(previousButtons[13] || false)) {
+                    cycleInstrument(1);
+                }
+
+                // 2. D-Left (14) / D-Right (15) -> Scale
+                if (pad.buttons[14] && pad.buttons[14].pressed && !(previousButtons[14] || false)) {
+                    cycleScale(-1);
+                } else if (pad.buttons[15] && pad.buttons[15].pressed && !(previousButtons[15] || false)) {
+                    cycleScale(1);
+                }
+
+                // 3. L1 (4) / R1 (5) -> Range / Octave
+                if (pad.buttons[4] && pad.buttons[4].pressed && !(previousButtons[4] || false)) {
+                    cycleRange(-1);
+                } else if (pad.buttons[5] && pad.buttons[5].pressed && !(previousButtons[5] || false)) {
+                    cycleRange(1);
+                }
+
+                // 4. L2 (6) / R2 (7) -> Toggle Sustain
+                if ((pad.buttons[6] && pad.buttons[6].pressed && !(previousButtons[6] || false)) ||
+                    (pad.buttons[7] && pad.buttons[7].pressed && !(previousButtons[7] || false))) {
+                    toggleSustain();
+                }
+
+                for (let i = 0; i < pad.buttons.length; i++) {
+                    previousButtons[i] = pad.buttons[i].pressed;
+                }
+                return;
             }
 
             if (currentMode === 'piano' && pad.axes.length >= 4) {
