@@ -10,11 +10,11 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
     <style>
         :root {
-            --primary: #00ffd5;
-            --primary-dim: rgba(0, 255, 213, 0.15);
+            --primary: #00f0c0; /* Softer, sleeker mint teal */
+            --primary-dim: rgba(0, 240, 192, 0.12);
             --accent: #ff0055;
-            --bg: #050a08;
-            --panel: #0a1411;
+            --bg: #020404; /* Ultra dark luxurious black */
+            --panel: #070e0d; /* Extremely dark panel background */
         }
 
         body {
@@ -27,7 +27,7 @@
             padding: 20px;
             overflow: hidden;
             margin: 0;
-            background-image: radial-gradient(circle at 50% 0%, #0d261e 0%, var(--bg) 60%);
+            background-image: radial-gradient(circle at 50% 0%, #071714 0%, var(--bg) 80%);
         }
 
         #init-overlay {
@@ -93,7 +93,7 @@
             background: var(--panel);
             text-align: center;
             border-radius: 4px;
-            border: 1px solid #1a332a;
+            border: 1px solid rgba(0, 240, 192, 0.15);
             transition: all 0.3s;
             font-family: monospace;
             font-size: 1em;
@@ -617,6 +617,167 @@
                 font-size: 0.8em;
             }
         }
+        /* Mode Tab Selector */
+        .mode-tabs-container {
+            display: flex;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 8px;
+            padding: 2px;
+            border: 1px solid rgba(0, 240, 192, 0.15);
+            align-items: center;
+        }
+
+        .mode-tab-btn {
+            background: transparent;
+            border: none;
+            color: #88c2ad;
+            padding: 8px 16px;
+            font-size: 0.85em;
+            font-weight: bold;
+            letter-spacing: 1px;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+        }
+
+        .mode-tab-btn.active {
+            background: var(--primary);
+            color: #000;
+            box-shadow: 0 0 12px var(--primary-dim);
+        }
+
+        .mode-tab-btn:hover:not(.active) {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        /* Info trigger button */
+        .info-trigger-btn {
+            background: rgba(0, 240, 192, 0.1);
+            border: 1px solid var(--primary);
+            color: var(--primary);
+            padding: 10px 16px;
+            border-radius: 4px;
+            font-size: 0.85em;
+            font-weight: bold;
+            cursor: pointer;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            transition: all 0.2s ease;
+            box-shadow: 0 0 10px rgba(0, 240, 192, 0.05);
+        }
+
+        .info-trigger-btn:hover {
+            background: var(--primary);
+            color: #000;
+            box-shadow: 0 0 15px var(--primary);
+        }
+
+        /* Dedicated Info Modal styling */
+        #info-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(3, 5, 5, 0.92);
+            z-index: 110;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(10px);
+        }
+
+        .info-card {
+            border: 1px solid rgba(0, 240, 192, 0.25) !important;
+            animation: none !important;
+            width: 90% !important;
+            max-width: 500px !important;
+        }
+
+        .close-modal-btn {
+            background: transparent;
+            border: none;
+            color: #cbd5e1;
+            font-size: 1.5em;
+            cursor: pointer;
+            transition: color 0.2s;
+            padding: 0;
+            line-height: 1;
+        }
+
+        .close-modal-btn:hover {
+            color: var(--accent);
+        }
+
+        .info-tabs {
+            display: flex;
+            width: 100%;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 10px;
+            gap: 5px;
+        }
+
+        .info-tab-btn {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: #88c2ad;
+            padding: 10px;
+            font-size: 0.85em;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s ease;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .info-tab-btn.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        .info-tab-content {
+            display: none;
+            width: 100%;
+            max-height: 280px;
+            overflow-y: auto;
+            text-align: left;
+            font-size: 0.9em;
+            line-height: 1.6;
+            color: #cbd5e1;
+        }
+
+        .info-tab-content.active {
+            display: block;
+        }
+
+        /* Styling lists inside tabs */
+        .info-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .info-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .info-list li span.key {
+            color: var(--primary);
+            font-family: monospace;
+            font-weight: bold;
+            background: rgba(0, 240, 192, 0.1);
+            padding: 2px 8px;
+            border-radius: 4px;
+            border: 1px solid rgba(0, 240, 192, 0.15);
+            font-size: 0.9em;
+        }
     </style>
 </head>
 
@@ -648,9 +809,64 @@
         </div>
     </div>
 
+    <!-- Dedicated Info Modal -->
+    <div id="info-modal" style="display: none;">
+        <div class="welcome-card info-card">
+            <div class="info-header" style="width: 100%; display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                <h2 class="app-welcome-title" style="font-size: 1.4em; text-align: left; letter-spacing: 1px;">Panduan Kontrol</h2>
+                <button class="close-modal-btn" onclick="toggleInfoModal()">✖</button>
+            </div>
+            
+            <div class="info-tabs">
+                <button class="info-tab-btn active" onclick="switchInfoTab('tab-gamepad', this)">GAMEPAD</button>
+                <button class="info-tab-btn" onclick="switchInfoTab('tab-keyboard', this)">KEYBOARD</button>
+                <button class="info-tab-btn" onclick="switchInfoTab('tab-mouse', this)">MOUSE & FITUR</button>
+            </div>
+            
+            <!-- Tab Gamepad -->
+            <div id="tab-gamepad" class="info-tab-content active">
+                <ul class="info-list">
+                    <li><span>Tuts Melodi (Piano Mode)</span><span class="key">D-Pad / Tombol A, B, X, Y</span></li>
+                    <li><span>Tangga Nada Tinggi/Rendah</span><span class="key">L1 / L2 / R1 / R2</span></li>
+                    <li><span>Pilih Root Nada (Chord Mode)</span><span class="key">Analog Kiri (L-Stick)</span></li>
+                    <li><span>Pilih Tipe Akord (Chord Mode)</span><span class="key">Analog Kanan (R-Stick)</span></li>
+                    <li><span>Kombinasi Pengaturan</span><span class="key">Tahan Share + D-Pad / Shoulder / L3</span></li>
+                    <li><span>Sustain Lock</span><span class="key">Tahan Share + L2/R2</span></li>
+                    <li><span>Ganti Mode Piano/Chord</span><span class="key">Tombol Options / Start</span></li>
+                </ul>
+            </div>
+            
+            <!-- Tab Keyboard -->
+            <div id="tab-keyboard" class="info-tab-content">
+                <ul class="info-list">
+                    <li><span>Tuts Putih (Do - Si)</span><span class="key">A, S, D, F, G, H, J, K, L, ;</span></li>
+                    <li><span>Tuts Hitam (Accidentals)</span><span class="key">W, E, T, Y, U, O, P</span></li>
+                    <li><span>Ganti Instrumen</span><span class="key">Angka 1</span></li>
+                    <li><span>Ganti Tangga Nada (Scale)</span><span class="key">Angka 2</span></li>
+                    <li><span>Ganti Rentang Oktaf</span><span class="key">Angka 3</span></li>
+                    <li><span>Toggle Sustain</span><span class="key">Angka 4</span></li>
+                    <li><span>Ganti Mode Arpeggio/Strum</span><span class="key">Angka 5</span></li>
+                    <li><span>Ganti Mode Piano/Chord</span><span class="key">Tombol M</span></li>
+                </ul>
+            </div>
+            
+            <!-- Tab Mouse & Fitur -->
+            <div id="tab-mouse" class="info-tab-content">
+                <ul class="info-list">
+                    <li><span>Memainkan Tuts</span><span>Klik langsung tuts piano di layar</span></li>
+                    <li><span>Memainkan Akord</span><span>Klik segment pada roda kiri & kanan</span></li>
+                    <li><span>Ganti Mode</span><span>Klik tab mode "PIANO MODE / CHORD MODE" di atas</span></li>
+                    <li><span>Pengaturan Suara</span><span>Pilih dropdown Instrumen, Skala, Oktaf, dll.</span></li>
+                    <li><span>Sustain Manual</span><span>Klik sakelar toggle Sustain di kanan atas</span></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
     <div class="top-controls">
         <div class="config-row">
             <div id="status">OS: MENUNGGU PERANGKAT</div>
+            <button class="info-trigger-btn" onclick="toggleInfoModal()">PANDUAN</button>
 
             <div class="select-wrapper" style="flex: 1.5">
                 <select id="instrument-select">
@@ -726,6 +942,11 @@
                     <input type="checkbox" id="sustain-toggle" checked>
                     <span class="slider"></span>
                 </label>
+            </div>
+
+            <div class="mode-tabs-container">
+                <button class="mode-tab-btn active" data-mode="piano" onclick="setPlayMode('piano')">PIANO MODE</button>
+                <button class="mode-tab-btn" data-mode="chord" onclick="setPlayMode('chord')">CHORD MODE</button>
             </div>
         </div>
 
@@ -1238,6 +1459,49 @@
             select.dispatchEvent(new Event('change'));
         }
 
+        function setPlayMode(mode) {
+            if (!isAudioReady || !activeEngine) return;
+            currentMode = mode;
+            activeEngine.releaseAll();
+
+            if (typeof stopArpeggio === 'function') stopArpeggio();
+
+            activeNotes = {}; activeChordId = null; activeChordNotes = []; chordModifier = 0;
+            document.querySelectorAll('.white-key').forEach(el => { el.classList.remove('active', 'sharp', 'flat'); });
+            const modText = document.getElementById('chord-modifier-text');
+            if (modText) modText.innerText = '';
+
+            document.getElementById('mode-piano').className = currentMode === 'piano' ? 'mode-ui active' : 'mode-ui';
+            document.getElementById('mode-chord').className = currentMode === 'chord' ? 'mode-ui active' : 'mode-ui';
+
+            // Sinkronisasi tab active class di UI
+            document.querySelectorAll('.mode-tab-btn').forEach(btn => {
+                if (btn.dataset.mode === currentMode) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+        }
+
+        function toggleInfoModal() {
+            const modal = document.getElementById('info-modal');
+            if (!modal) return;
+            if (modal.style.display === 'none') {
+                modal.style.display = 'flex';
+            } else {
+                modal.style.display = 'none';
+            }
+        }
+
+        function switchInfoTab(tabId, btn) {
+            document.querySelectorAll('.info-tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.info-tab-btn').forEach(b => b.classList.remove('active'));
+            
+            document.getElementById(tabId).classList.add('active');
+            if (btn) btn.classList.add('active');
+        }
+
         window.addEventListener('keydown', (e) => {
             if (isOverlayVisible) {
                 // Cegah default untuk tombol Space agar halaman tidak bergulir
@@ -1261,6 +1525,8 @@
                 toggleSustain();
             } else if (e.key === '5') {
                 cycleChordPlay(1);
+            } else if (e.key.toLowerCase() === 'm') {
+                setPlayMode(currentMode === 'piano' ? 'chord' : 'piano');
             }
         });
 
@@ -1473,15 +1739,7 @@
             if (!pad) return;
 
             if (pad.buttons[9].pressed && !(previousButtons[9] || false)) {
-                currentMode = currentMode === 'piano' ? 'chord' : 'piano';
-                activeEngine.releaseAll();
-
-                activeNotes = {}; activeChordId = null; activeChordNotes = []; chordModifier = 0;
-                document.querySelectorAll('.white-key').forEach(el => { el.classList.remove('active', 'sharp', 'flat'); });
-                document.getElementById('chord-modifier-text').innerText = '';
-
-                document.getElementById('mode-piano').className = currentMode === 'piano' ? 'mode-ui active' : 'mode-ui';
-                document.getElementById('mode-chord').className = currentMode === 'chord' ? 'mode-ui active' : 'mode-ui';
+                setPlayMode(currentMode === 'piano' ? 'chord' : 'piano');
             }
 
             // Kombinasi Tombol Gamepad untuk Mengubah Setting (Menahan Select/Share [Button 8])
