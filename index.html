@@ -574,7 +574,7 @@
                         style="color: inherit; text-decoration: none;">github.com/triwahyu45</a></p>
             </div>
         </div>
-        <button id="start-btn">TAP TO START SYSTEM</button>
+        <button id="start-btn">TAP / PRESS [SPACE] / [CROSS X] TO START</button>
         <div id="splash-loading">
             <div style="color: var(--primary); letter-spacing: 2px; font-size: 0.9em; margin-bottom: 5px;">MENGUNDUH
                 ASSET...</div>
@@ -873,7 +873,17 @@
             }
         });
 
-        document.getElementById('instrument-select').addEventListener('change', async (e) => {
+        window.addEventListener('keydown', (e) => {
+            const overlay = document.getElementById('init-overlay');
+            if (overlay && overlay.style.display !== 'none') {
+                if (e.code === 'Space' || e.code === 'Enter') {
+                    e.preventDefault();
+                    document.getElementById('start-btn').click();
+                }
+            }
+        });
+
+        document.getElementById('instrument-select').addEventListener('change', async (e) =>>,StartLine:873,TargetContent: {
             await switchInstrument(e.target.value);
         });
 
@@ -1040,6 +1050,20 @@
         let currentMode = 'piano';
 
         worker.onmessage = function () {
+            // Cek jika overlay inisialisasi masih aktif dan user menekan tombol Cross (X) pada gamepad
+            if (gamepadIndex !== null) {
+                const pad = navigator.getGamepads()[gamepadIndex];
+                if (pad) {
+                    const overlay = document.getElementById('init-overlay');
+                    if (overlay && overlay.style.display !== 'none') {
+                        if (pad.buttons[0] && pad.buttons[0].pressed) {
+                            document.getElementById('start-btn').click();
+                            return;
+                        }
+                    }
+                }
+            }
+
             if (gamepadIndex === null || !isAudioReady || !activeEngine) return;
             const pad = navigator.getGamepads()[gamepadIndex];
             if (!pad) return;
