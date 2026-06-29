@@ -784,7 +784,9 @@
             const delayMs = 150; // Jeda antar nada petikan
 
             if (arpeggioActiveNotes.length > 0) {
-                activeEngine.triggerAttack(arpeggioActiveNotes[0]);
+                const isSustain = document.getElementById('sustain-toggle').checked;
+                const noteDuration = isSustain ? 0.8 : 0.12;
+                activeEngine.triggerAttackRelease(arpeggioActiveNotes[0], noteDuration);
                 index = 1;
             }
 
@@ -794,15 +796,10 @@
                     return;
                 }
                 const note = arpeggioActiveNotes[index % arpeggioActiveNotes.length];
-
-                // Sustain toggle off -> matikan nada sebelumnya sebelum bunyikan nada berikutnya
                 const isSustain = document.getElementById('sustain-toggle').checked;
-                if (!isSustain) {
-                    const prevIndex = (index - 1 + arpeggioActiveNotes.length) % arpeggioActiveNotes.length;
-                    activeEngine.triggerRelease(arpeggioActiveNotes[prevIndex]);
-                }
 
-                activeEngine.triggerAttack(note);
+                const noteDuration = isSustain ? 0.8 : 0.12;
+                activeEngine.triggerAttackRelease(note, noteDuration);
                 index++;
             }, delayMs);
         }
@@ -812,8 +809,8 @@
                 clearInterval(arpeggioIntervalId);
                 arpeggioIntervalId = null;
             }
-            if (arpeggioActiveNotes.length > 0 && activeEngine) {
-                activeEngine.triggerRelease(arpeggioActiveNotes);
+            if (activeEngine) {
+                activeEngine.releaseAll();
             }
             arpeggioActiveNotes = [];
         }
@@ -1551,8 +1548,10 @@
                         if (currentChordPlay === 'arpeggio') {
                             startArpeggio(activeChordNotes);
                         } else if (currentChordPlay === 'strum') {
+                            const isSustain = document.getElementById('sustain-toggle').checked;
+                            const strumDuration = isSustain ? 1.5 : 0.35;
                             activeChordNotes.forEach((note, index) => {
-                                activeEngine.triggerAttack(note, Tone.now() + (index * 0.055));
+                                activeEngine.triggerAttackRelease(note, strumDuration, Tone.now() + (index * 0.045));
                             });
                         } else {
                             activeEngine.triggerAttack(activeChordNotes);
