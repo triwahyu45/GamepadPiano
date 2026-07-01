@@ -1803,10 +1803,6 @@
                     note: noteName,
                     el: keyDiv
                 };
-
-                try {
-                    keyDiv.setPointerCapture(e.pointerId);
-                } catch (err) {}
             });
 
             keyDiv.addEventListener('pointerup', (e) => {
@@ -1820,17 +1816,47 @@
                 e.preventDefault();
                 releasePointer(e.pointerId);
             });
-
-            keyDiv.addEventListener('pointerleave', (e) => {
-                // Only release on pointerleave for mouse cursors. 
-                // For touch pointers, sliding slightly shouldn't cut the note off.
-                if (e.pointerType === 'mouse') {
-                    e.stopPropagation();
-                    e.preventDefault();
-                    releasePointer(e.pointerId);
-                }
-            });
         }
+
+        // Global listeners to support smooth sliding play (glissando) across touch/mouse keys
+        window.addEventListener('pointermove', (e) => {
+            const active = pointerActiveNotes[e.pointerId];
+            if (!active) return;
+
+            // Find element at current pointer position
+            const el = document.elementFromPoint(e.clientX, e.clientY);
+            if (!el) return;
+
+            const keyEl = el.closest('.white-key, .black-key');
+            if (!keyEl) {
+                // Slid off the keyboard area, release key
+                releasePointer(e.pointerId);
+                return;
+            }
+
+            const noteName = keyEl.getAttribute('data-note');
+            if (noteName && active.note !== noteName) {
+                if (isAudioReady && activeEngine) {
+                    activeEngine.triggerRelease(active.note);
+                    activeEngine.triggerAttack(noteName);
+                }
+                active.el.classList.remove('active');
+                keyEl.classList.add('active');
+
+                pointerActiveNotes[e.pointerId] = {
+                    note: noteName,
+                    el: keyEl
+                };
+            }
+        });
+
+        window.addEventListener('pointerup', (e) => {
+            releasePointer(e.pointerId);
+        });
+
+        window.addEventListener('pointercancel', (e) => {
+            releasePointer(e.pointerId);
+        });
 
         // --- Generator Piano Dinamis ---
         function regeneratePianoKeys() {
@@ -1884,6 +1910,7 @@
                 const whiteKeyDiv = document.createElement('div');
                 whiteKeyDiv.className = 'white-key';
                 whiteKeyDiv.id = 'key-' + midi;
+                whiteKeyDiv.setAttribute('data-note', noteName);
 
                 // Label: note name + gamepad mapping if applicable
                 let labelHtml = '';
@@ -1907,6 +1934,7 @@
                     const blackKeyDiv = document.createElement('div');
                     blackKeyDiv.className = 'black-key';
                     blackKeyDiv.id = 'key-' + blackMidi;
+                    blackKeyDiv.setAttribute('data-note', blackNoteName);
 
                     let blackLabel = '';
                     if (gamepadMidiSet.has(blackMidi)) {
