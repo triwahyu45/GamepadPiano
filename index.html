@@ -1505,6 +1505,10 @@
     </div>
 
     <script>
+        // Disable context menu (right click / long press) and text selection globally
+        window.addEventListener('contextmenu', (e) => e.preventDefault(), { passive: false });
+        window.addEventListener('selectstart', (e) => e.preventDefault(), { passive: false });
+
         // --- Scale Definitions ---
         const SCALES = {
             major: [0, 2, 4, 5, 7, 9, 11],
@@ -2977,10 +2981,16 @@
                     const currentMod = btnInfo.side === 'right' ? rightMod : leftMod;
 
                     const targetNote = transposeNote(btnInfo.note, currentMod);
-                    const domEl = midiToElementMap[btnInfo.midi];
+                    const targetMidi = Tone.Frequency(targetNote).toMidi();
+                    const domEl = midiToElementMap[targetMidi];
 
                     if (isPressed && !wasPressed) {
-                        if (activeNotes[i]) activeEngine.triggerRelease(activeNotes[i].note);
+                        if (activeNotes[i]) {
+                            const prevMidi = Tone.Frequency(activeNotes[i].note).toMidi();
+                            const prevDomEl = midiToElementMap[prevMidi];
+                            if (prevDomEl) prevDomEl.classList.remove('active', 'sharp', 'flat');
+                            activeEngine.triggerRelease(activeNotes[i].note);
+                        }
 
                         activeEngine.triggerAttack(targetNote);
                         activeNotes[i] = { note: targetNote, modState: currentMod };
@@ -2992,23 +3002,30 @@
                         }
                     } else if (isPressed && wasPressed && activeNotes[i]) {
                         if (activeNotes[i].modState !== currentMod) {
+                            const prevMidi = Tone.Frequency(activeNotes[i].note).toMidi();
+                            const prevDomEl = midiToElementMap[prevMidi];
+                            if (prevDomEl) prevDomEl.classList.remove('active', 'sharp', 'flat');
+
                             activeEngine.triggerRelease(activeNotes[i].note);
                             activeEngine.triggerAttack(targetNote);
                             activeNotes[i].note = targetNote;
                             activeNotes[i].modState = currentMod;
 
                             if (domEl) {
-                                domEl.classList.remove('sharp', 'flat');
+                                domEl.classList.add('active');
                                 if (currentMod === 1) domEl.classList.add('sharp');
                                 if (currentMod === -1) domEl.classList.add('flat');
                             }
                         }
                     } else if (!isPressed && wasPressed) {
                         if (activeNotes[i]) {
+                            const prevMidi = Tone.Frequency(activeNotes[i].note).toMidi();
+                            const prevDomEl = midiToElementMap[prevMidi];
+                            if (prevDomEl) prevDomEl.classList.remove('active', 'sharp', 'flat');
+
                             activeEngine.triggerRelease(activeNotes[i].note);
                             delete activeNotes[i];
                         }
-                        if (domEl) domEl.classList.remove('active', 'sharp', 'flat');
                     }
                 }
             } else if (currentMode === 'chord' && pad.axes.length >= 4) {
