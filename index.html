@@ -273,7 +273,7 @@
 
         /* Expand container height in chord mode to show piano below wheels */
         #mode-container.mode-chord {
-            height: 580px;
+            height: 620px;
         }
 
         /* Shared Piano Wrapper */
@@ -300,19 +300,80 @@
             overflow-x: auto;
             overflow-y: hidden;
             scroll-behavior: smooth;
-            scrollbar-width: thin;
-            scrollbar-color: #1e3f34 #000;
+            /* Hide native scrollbars for clean custom look */
+            scrollbar-width: none;  /* Firefox */
+            -ms-overflow-style: none;  /* IE and Edge */
         }
 
         .piano-wrapper::-webkit-scrollbar {
-            height: 5px;
+            display: none; /* Chrome, Safari and Opera */
         }
-        .piano-wrapper::-webkit-scrollbar-track {
-            background: #000;
+
+        /* Custom Scroll Slider Styling */
+        #piano-scroll-slider {
+            width: 100%;
+            height: 10px;
+            -webkit-appearance: none;
+            background: #020705;
+            border: 1px solid #112a21;
+            border-radius: 5px;
+            outline: none;
+            margin: 0;
+            box-sizing: border-box;
+            cursor: pointer;
+            transition: border-color 0.2s;
         }
-        .piano-wrapper::-webkit-scrollbar-thumb {
-            background: #1e3f34;
-            border-radius: 3px;
+
+        #piano-scroll-slider:hover {
+            border-color: #1e3f34;
+        }
+
+        /* WebKit Slider Thumb (Chrome, Safari, Edge, Opera, Android Browser) */
+        #piano-scroll-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            height: 18px;
+            width: 50px;
+            border-radius: 9px;
+            background: var(--primary);
+            border: 1px solid #00ffcc;
+            box-shadow: 0 0 10px var(--primary-dim);
+            cursor: pointer;
+            transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
+        }
+
+        #piano-scroll-slider::-webkit-slider-thumb:hover {
+            background: #00ffcc;
+            transform: scale(1.05);
+            box-shadow: 0 0 14px rgba(0, 255, 204, 0.6);
+        }
+
+        #piano-scroll-slider::-webkit-slider-thumb:active {
+            transform: scale(0.96);
+            background: #00ffcc;
+        }
+
+        /* Firefox Slider Thumb */
+        #piano-scroll-slider::-moz-range-thumb {
+            height: 18px;
+            width: 50px;
+            border-radius: 9px;
+            background: var(--primary);
+            border: 1px solid #00ffcc;
+            box-shadow: 0 0 10px var(--primary-dim);
+            cursor: pointer;
+            transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
+        }
+
+        #piano-scroll-slider::-moz-range-thumb:hover {
+            background: #00ffcc;
+            transform: scale(1.05);
+            box-shadow: 0 0 14px rgba(0, 255, 204, 0.6);
+        }
+
+        #piano-scroll-slider::-moz-range-thumb:active {
+            transform: scale(0.96);
+            background: #00ffcc;
         }
 
         /* Piano Mode States */
@@ -1060,7 +1121,7 @@
 
             /* chord mode: wheels scale down so piano fits below */
             #mode-container.mode-chord {
-                height: 520px;
+                height: 560px;
             }
 
             #mode-container.mode-chord .piano-wrapper-scroll {
@@ -1087,7 +1148,7 @@
             }
 
             #mode-container.mode-chord {
-                height: 460px;
+                height: 495px;
             }
 
             #mode-container.mode-chord .piano-wrapper-scroll {
@@ -1279,6 +1340,19 @@
         </div>
         <div class="piano-wrapper-scroll" id="piano-wrapper-scroll">
             <div class="piano-wrapper" id="piano-wrapper">
+            </div>
+            <!-- Custom neon scroll slider placed directly below the keys -->
+            <div class="piano-scroll-slider-container" style="
+                padding: 10px 15px 12px; 
+                background: #000000; 
+                border-top: 1px solid #111; 
+                display: flex; 
+                align-items: center; 
+                justify-content: center;
+                box-sizing: border-box;
+                height: 42px;
+            ">
+                <input type="range" id="piano-scroll-slider" min="0" max="1000" value="0">
             </div>
         </div>
     </div>
@@ -1605,10 +1679,23 @@
                 });
             }
             const pWrapper = document.getElementById('piano-wrapper');
+            const slider = document.getElementById('piano-scroll-slider');
             if (pWrapper) {
                 pWrapper.addEventListener('scroll', () => {
                     localStorage.setItem('gamepad_piano_scroll', pWrapper.scrollLeft);
+                    // Synchronize slider value
+                    const maxScroll = pWrapper.scrollWidth - pWrapper.clientWidth;
+                    if (slider && maxScroll > 0) {
+                        slider.value = (pWrapper.scrollLeft / maxScroll) * 1000;
+                    }
                 }, { passive: true });
+            }
+
+            if (slider && pWrapper) {
+                slider.addEventListener('input', () => {
+                    const maxScroll = pWrapper.scrollWidth - pWrapper.clientWidth;
+                    pWrapper.scrollLeft = (slider.value / 1000) * maxScroll;
+                });
             }
         });
 
@@ -1973,6 +2060,7 @@
             // Restore manual scroll position or auto-scroll to center the active octave
             requestAnimationFrame(() => {
                 const wrapper = document.getElementById('piano-wrapper');
+                const slider = document.getElementById('piano-scroll-slider');
                 if (!wrapper) return;
                 const savedScroll = localStorage.getItem('gamepad_piano_scroll');
                 if (savedScroll !== null) {
@@ -1985,6 +2073,12 @@
                         const keyWidth = activeKey.offsetWidth;
                         wrapper.scrollLeft = keyLeft - (wrapperWidth / 2) + (keyWidth / 2);
                     }
+                }
+                
+                // Force sync slider thumb position
+                const maxScroll = wrapper.scrollWidth - wrapper.clientWidth;
+                if (slider && maxScroll > 0) {
+                    slider.value = (wrapper.scrollLeft / maxScroll) * 1000;
                 }
             });
 
