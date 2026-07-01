@@ -1758,18 +1758,36 @@
             }
             const pWrapper = document.getElementById('piano-wrapper');
             const slider = document.getElementById('piano-scroll-slider');
+            let isSliderDragging = false;
+
             if (pWrapper) {
                 pWrapper.addEventListener('scroll', () => {
                     localStorage.setItem('gamepad_piano_scroll', pWrapper.scrollLeft);
-                    // Synchronize slider value
-                    const maxScroll = pWrapper.scrollWidth - pWrapper.clientWidth;
-                    if (slider && maxScroll > 0) {
-                        slider.value = (pWrapper.scrollLeft / maxScroll) * 1000;
+                    // Only sync slider if the user is NOT currently dragging it
+                    // (prevents feedback loop that causes jumpy behaviour)
+                    if (!isSliderDragging) {
+                        const maxScroll = pWrapper.scrollWidth - pWrapper.clientWidth;
+                        if (slider && maxScroll > 0) {
+                            slider.value = (pWrapper.scrollLeft / maxScroll) * 1000;
+                        }
                     }
                 }, { passive: true });
             }
 
             if (slider && pWrapper) {
+                // While dragging: disable smooth scroll so there's no animation fighting
+                slider.addEventListener('pointerdown', () => {
+                    isSliderDragging = true;
+                    pWrapper.style.scrollBehavior = 'auto';
+                });
+                slider.addEventListener('pointerup', () => {
+                    isSliderDragging = false;
+                    pWrapper.style.scrollBehavior = '';
+                });
+                slider.addEventListener('pointercancel', () => {
+                    isSliderDragging = false;
+                    pWrapper.style.scrollBehavior = '';
+                });
                 slider.addEventListener('input', () => {
                     const maxScroll = pWrapper.scrollWidth - pWrapper.clientWidth;
                     pWrapper.scrollLeft = (slider.value / 1000) * maxScroll;
