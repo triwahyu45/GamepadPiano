@@ -2847,10 +2847,27 @@
 
         let smoothLX = 0, smoothLY = 0, smoothRX = 0, smoothRY = 0;
 
+        // Snapback cooldown tracking variables
+        let leftStickReleaseTime = 0;
+        let rightStickReleaseTime = 0;
+        let lastInactiveModifier = 0;
+
+        // DOM caching for 60fps dots to avoid layout thrashing
+        let cachedDotLeft = null;
+        let cachedDotRight = null;
+
         function updateAnalogDot(dotId, x, y, radius = 105) {
-            const dot = document.getElementById(dotId);
+            let dot;
+            if (dotId === 'dot-left') {
+                if (!cachedDotLeft) cachedDotLeft = document.getElementById('dot-left');
+                dot = cachedDotLeft;
+            } else {
+                if (!cachedDotRight) cachedDotRight = document.getElementById('dot-right');
+                dot = cachedDotRight;
+            }
             if (!dot) return;
-            dot.style.transform = `translate(${x * radius}px, ${y * radius}px)`;
+            // Promote to GPU composite layer with translate3d
+            dot.style.transform = `translate3d(${x * radius}px, ${y * radius}px, 0)`;
             dot.style.opacity = Math.hypot(x, y) < 0.05 ? '0.65' : '1';
         }
 
@@ -3004,6 +3021,33 @@
                 const rootState = getStickStateWithHysteresis(smoothLX, smoothLY, CHORD_ROOT_ITEMS.length, isLeftActive, lastLeftSegment, lastLeftOctave);
                 const typeState = getStickStateWithHysteresis(smoothRX, smoothRY, CHORD_TYPES.length, isRightActive, lastRightSegment, lastRightOctave);
 
+                // Detect transition from active -> inactive to save release timestamp for snapback prevention
+                if (isLeftActive && !rootState.active) {
+                    leftStickReleaseTime = Date.now();
+                }
+                if (isRightActive && !typeState.active) {
+                    rightStickReleaseTime = Date.now();
+                }
+
+                // Snapback lockout: reject activations that occur within 180ms of a release
+                let finalRootActive = rootState.active;
+                if (finalRootActive && !isLeftActive) {
+                    if (Date.now() - leftStickReleaseTime < 180) {
+                        finalRootActive = false;
+                        rootState.active = false;
+                        rootState.segment = null;
+                    }
+                }
+
+                let finalTypeActive = typeState.active;
+                if (finalTypeActive && !isRightActive) {
+                    if (Date.now() - rightStickReleaseTime < 180) {
+                        finalTypeActive = false;
+                        typeState.active = false;
+                        typeState.segment = null;
+                    }
+                }
+
                 isLeftActive = rootState.active;
                 lastLeftSegment = rootState.segment;
                 lastLeftOctave = rootState.octaveIndex;
@@ -3046,8 +3090,10 @@
                     const rootLabel = rootItem.label;
                     const type = CHORD_TYPES[typeIndex];
 
-                    document.getElementById('wc-left').classList.add('active');
-                    document.getElementById('wc-right').classList.add('active');
+                    const wcLeft = document.getElementById('wc-left');
+                    const wcRight = document.getElementById('wc-right');
+                    if (wcLeft) wcLeft.classList.add('active');
+                    if (wcRight) wcRight.classList.add('active');
 
                     const chordId = `${rootMidi}-${type}-${newModifier}`;
 
@@ -3087,10 +3133,13 @@
                         }
                     }
                 } else {
-                    document.getElementById('wc-left').classList.remove('active');
-                    document.getElementById('wc-right').classList.remove('active');
-
+                    // Only update DOM class lists if a chord was active to prevent thrashing
                     if (activeChordId !== null) {
+                        const wcLeft = document.getElementById('wc-left');
+                        const wcRight = document.getElementById('wc-right');
+                        if (wcLeft) wcLeft.classList.remove('active');
+                        if (wcRight) wcRight.classList.remove('active');
+
                         resetChordState();
                     }
 
