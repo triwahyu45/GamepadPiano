@@ -1105,6 +1105,38 @@
             font-size: 0.9em;
         }
 
+        /* Master Volume Slider styling */
+        #volume-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            height: 12px;
+            width: 12px;
+            border-radius: 50%;
+            background: var(--primary);
+            border: 1px solid #00ffcc;
+            cursor: pointer;
+            box-shadow: 0 0 5px var(--primary-dim);
+            transition: transform 0.1s, background 0.1s;
+        }
+        #volume-slider::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+            background: #00ffcc;
+        }
+        #volume-slider::-moz-range-thumb {
+            height: 12px;
+            width: 12px;
+            border-radius: 50%;
+            background: var(--primary);
+            border: 1px solid #00ffcc;
+            cursor: pointer;
+            box-shadow: 0 0 5px var(--primary-dim);
+            transition: transform 0.1s, background 0.1s;
+        }
+        #volume-slider::-moz-range-thumb:hover {
+            transform: scale(1.2);
+            background: #00ffcc;
+        }
+
         @media (max-width: 768px) {
             body {
                 padding: 10px;
@@ -1288,6 +1320,31 @@
                     <input type="checkbox" id="sustain-toggle" checked>
                     <span class="slider"></span>
                 </label>
+            </div>
+
+            <div class="volume-panel" style="
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                background: rgba(0, 240, 192, 0.03);
+                border: 1px solid rgba(0, 240, 192, 0.15);
+                padding: 4px 10px;
+                border-radius: 6px;
+                height: 38px;
+                box-sizing: border-box;
+            ">
+                <span style="font-size: 0.75em; font-weight: 800; color: var(--primary); letter-spacing: 1px;">VOL</span>
+                <input type="range" id="volume-slider" min="0" max="100" value="85" style="
+                    width: 70px;
+                    height: 6px;
+                    -webkit-appearance: none;
+                    background: #11221b;
+                    border-radius: 3px;
+                    outline: none;
+                    cursor: pointer;
+                    margin: 0;
+                ">
+                <span id="volume-val" style="font-size: 0.75em; font-weight: 800; min-width: 25px; text-align: right; color: #fff;">85%</span>
             </div>
 
             <div class="transpose-panel">
@@ -1654,6 +1711,21 @@
             document.getElementById('range-select').value = currentRange.toString();
             document.getElementById('chord-play-select').value = currentChordPlay;
             
+            // Restore Master Volume slider position
+            const savedVolume = localStorage.getItem('gamepad_piano_volume');
+            const defaultVolume = savedVolume !== null ? parseInt(savedVolume) : 85;
+            const volSlider = document.getElementById('volume-slider');
+            if (volSlider) {
+                volSlider.value = defaultVolume;
+                volSlider.addEventListener('input', (e) => {
+                    updateVolume(parseInt(e.target.value));
+                });
+            }
+            const volValEl = document.getElementById('volume-val');
+            if (volValEl) {
+                volValEl.innerText = defaultVolume + '%';
+            }
+
             const transValEl = document.getElementById('transpose-val');
             if (transValEl) {
                 transValEl.innerText = `TRANSPOSE: ${currentTranspose > 0 ? '+' : ''}${currentTranspose}`;
@@ -1999,6 +2071,16 @@
             // C  C# D  D# E  F  F# G  G# A  A# B
             const isBlack = [false, true, false, true, false, false, true, false, true, false, true, false];
 
+            // Build keyboard mapping label dictionary dynamically based on current transpose and scale
+            const keyboardLabelsMap = {};
+            const visibleKbNotes = generateContiguousScaleNotes(30);
+            for (const key in KEYBOARD_PLAY_KEYS) {
+                const idx = KEYBOARD_PLAY_KEYS[key];
+                const noteMidi = visibleKbNotes[idx] + currentTranspose;
+                // Format letter neatly as uppercase
+                keyboardLabelsMap[noteMidi] = key.toUpperCase();
+            }
+
             // Build gamepad MIDI set for fast lookup
             const gamepadMidiSet = new Set(Object.values(DYNAMIC_BUTTON_MAP).map(b => b.midi));
 
@@ -2023,7 +2105,26 @@
                         labelHtml = `<div class="mapping">${BUTTON_LABELS[btnIdx]}</div>`;
                     }
                 }
-                whiteKeyDiv.innerHTML = `<span class="note-label">${cleanNote}</span>${labelHtml}`;
+
+                // Keyboard label helper
+                let kbLabelHtml = '';
+                if (keyboardLabelsMap[midi]) {
+                    kbLabelHtml = `<div class="kb-mapping" style="
+                        font-size: 10px;
+                        font-weight: 800;
+                        color: var(--primary);
+                        opacity: 0.75;
+                        margin-top: 3px;
+                        border: 1px solid rgba(0, 240, 192, 0.2);
+                        padding: 1px 4px;
+                        border-radius: 3px;
+                        background: rgba(0, 240, 192, 0.05);
+                        pointer-events: none;
+                        user-select: none;
+                    ">⌨️ ${keyboardLabelsMap[midi]}</div>`;
+                }
+
+                whiteKeyDiv.innerHTML = `<span class="note-label">${cleanNote}</span>${labelHtml}${kbLabelHtml}`;
                 setupPointerEvents(whiteKeyDiv, noteName);
 
                 // Check if next semitone (midi+1) is a black key
@@ -2046,7 +2147,27 @@
                             blackLabel = `<div class="mapping">${BUTTON_LABELS[btnIdx]}</div>`;
                         }
                     }
-                    blackKeyDiv.innerHTML = blackLabel;
+
+                    // Keyboard label helper for black keys
+                    let blackKbLabel = '';
+                    if (keyboardLabelsMap[blackMidi]) {
+                        blackKbLabel = `<div class="kb-mapping" style="
+                            font-size: 9px;
+                            font-weight: 800;
+                            color: var(--primary);
+                            opacity: 0.8;
+                            margin-top: 3px;
+                            border: 1px solid rgba(0, 240, 192, 0.25);
+                            padding: 1px 3px;
+                            border-radius: 3px;
+                            background: rgba(0, 240, 192, 0.08);
+                            text-align: center;
+                            pointer-events: none;
+                            user-select: none;
+                        ">⌨️ ${keyboardLabelsMap[blackMidi]}</div>`;
+                    }
+
+                    blackKeyDiv.innerHTML = `${blackLabel}${blackKbLabel}`;
                     setupPointerEvents(blackKeyDiv, blackNoteName);
                     whiteKeyDiv.appendChild(blackKeyDiv);
                 }
@@ -2509,6 +2630,11 @@
                 await Tone.start();
                 Tone.context.lookAhead = 0.015; // Enable ultra-low latency Web Audio scheduling
 
+                // Initialize volume
+                const savedVolume = localStorage.getItem('gamepad_piano_volume');
+                const defaultVolume = savedVolume !== null ? parseInt(savedVolume) : 85;
+                updateVolume(defaultVolume);
+
                 // Ambil instrumen dan sustain yang tersimpan
                 const savedInstrument = localStorage.getItem('gamepad_piano_instrument') || document.getElementById('instrument-select').value;
                 document.getElementById('instrument-select').value = savedInstrument;
@@ -2530,6 +2656,22 @@
                 document.getElementById('status').textContent = `ERROR AUDIO`;
             }
         });
+
+        function updateVolume(val) {
+            if (val === 0) {
+                Tone.Destination.mute = true;
+            } else {
+                Tone.Destination.mute = false;
+                // Map linear 1-100% to decibels using Tone.gainToDb
+                const db = Tone.gainToDb(val / 100);
+                Tone.Destination.volume.value = db;
+            }
+            localStorage.setItem('gamepad_piano_volume', val);
+            const valEl = document.getElementById('volume-val');
+            if (valEl) valEl.innerText = val + '%';
+            const slider = document.getElementById('volume-slider');
+            if (slider) slider.value = val;
+        }
 
         // --- Helper Fungsi Siklus Konfigurasi ---
         function cycleInstrument(direction = 1) {
@@ -2692,7 +2834,7 @@
                     if (e.repeat) return;
                     if (!isAudioReady || !activeEngine) return;
 
-                    const visibleNotes = generateContiguousScaleNotes(PIANO_BUTTONS.length);
+                    const visibleNotes = generateContiguousScaleNotes(30);
                     const midiVal = visibleNotes[keyIndex] + currentTranspose;
                     const noteName = midiToNote(midiVal);
 
@@ -2721,7 +2863,7 @@
 
                 const keyIndex = KEYBOARD_PLAY_KEYS[rawKey];
                 if (keyIndex !== undefined) {
-                    const visibleNotes = generateContiguousScaleNotes(PIANO_BUTTONS.length);
+                    const visibleNotes = generateContiguousScaleNotes(30);
                     const midiVal = visibleNotes[keyIndex] + currentTranspose;
                     const domEl = midiToElementMap[midiVal];
                     if (domEl) {
