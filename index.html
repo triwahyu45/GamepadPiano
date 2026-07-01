@@ -1791,6 +1791,15 @@
         }
 
         function setupPointerEvents(keyDiv, noteName) {
+            // Block browser scroll/zoom/gesture behaviors on the keys to prevent pointercancel
+            keyDiv.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+            }, { passive: false });
+
+            keyDiv.addEventListener('touchmove', (e) => {
+                e.preventDefault();
+            }, { passive: false });
+
             keyDiv.addEventListener('pointerdown', (e) => {
                 e.stopPropagation();
                 e.preventDefault();
