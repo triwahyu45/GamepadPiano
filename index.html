@@ -2233,7 +2233,7 @@
             if (!softFilter) softFilter = new Tone.Filter(1200, "lowpass").connect(globalReverb);
 
             const isSustain = document.getElementById('sustain-toggle').checked;
-            const releaseTime = isSustain ? 2.5 : 0.1;
+            const releaseTime = isSustain ? 4.5 : 0.1;
 
             if (SOUNDBANKS[type]) {
                 activeEngine = new Tone.Sampler({
@@ -2538,7 +2538,7 @@
         });
 
         document.getElementById('sustain-toggle').addEventListener('change', (e) => {
-            const releaseTime = e.target.checked ? 2.5 : 0.1;
+            const releaseTime = e.target.checked ? 4.5 : 0.1;
             localStorage.setItem('gamepad_piano_sustain', e.target.checked);
             if (activeEngine) {
                 if (activeEngine.name === "Sampler") activeEngine.release = releaseTime;
