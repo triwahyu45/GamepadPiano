@@ -1959,17 +1959,13 @@
             const sortedMidi = [...new Set(midiArray)].sort((a, b) => a - b);
             
             if (sortedMidi.length === 1) {
-                return midiToNoteName(sortedMidi[0]);
+                return midiToNoteName(sortedMidi[0]).replace(/\d+$/, '');
             }
             
-            const rootMidi = sortedMidi[0];
-            const rootName = midiToNoteName(rootMidi).replace(/\d+$/, '');
-            const intervals = sortedMidi.map(m => (m - rootMidi) % 12);
-            const uniqueIntervals = [...new Set(intervals)].sort((a, b) => a - b);
-            const intervalStr = uniqueIntervals.join(',');
+            const notes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+            const getCleanName = (midi) => notes[midi % 12];
             
-            const chordMap = {
-                '0,7': '5 (Power Chord)',
+            const chordMap3 = {
                 '0,4,7': '',         // Major
                 '0,3,7': 'm',        // Minor
                 '0,3,6': 'dim',      // Diminished
@@ -1985,10 +1981,52 @@
                 '0,3,7,9': 'm6',     // Minor 6
             };
             
-            // Check inversions by testing each note as root candidate
+            const getScaleChordType = (rootNote) => {
+                const upper = rootNote.toUpperCase();
+                if (['C', 'F', 'G'].includes(upper)) return ''; // Major in C key
+                if (['D', 'E', 'A'].includes(upper)) return 'm'; // Minor in C key
+                if (upper === 'B') return 'dim'; // B diminished
+                return '';
+            };
+            
+            // If 2 notes are played, recognize them as a partial chord
+            if (sortedMidi.length === 2) {
+                const n1 = sortedMidi[0];
+                const n2 = sortedMidi[1];
+                const diff = (n2 - n1) % 12;
+                
+                if (diff === 3) {
+                    // n1 is root (minor third interval) -> e.g. B + D -> Bm
+                    const rootName = getCleanName(n1);
+                    return rootName + 'm';
+                }
+                if (diff === 4) {
+                    // n1 is root (major third interval) -> e.g. C + E -> C
+                    const rootName = getCleanName(n1);
+                    return rootName;
+                }
+                if (diff === 7) {
+                    // n1 is root (perfect 5th interval) -> e.g. E + B -> Em
+                    const rootName = getCleanName(n1);
+                    return rootName + getScaleChordType(rootName);
+                }
+                if (diff === 5) {
+                    // n2 is root (perfect 4th / inverted 5th interval) -> e.g. D + G -> G
+                    const rootName = getCleanName(n2);
+                    return rootName + getScaleChordType(rootName);
+                }
+                if (diff === 10 || diff === 11) {
+                    const rootName = getCleanName(n1);
+                    return rootName + (diff === 10 ? '7' : 'maj7');
+                }
+                
+                return getCleanName(n1) + ' + ' + getCleanName(n2);
+            }
+            
+            // Check inversions for 3+ notes
             for (let r = 0; r < sortedMidi.length; r++) {
                 const candidateRoot = sortedMidi[r];
-                const candidateRootName = midiToNoteName(candidateRoot).replace(/\d+$/, '');
+                const candidateRootName = getCleanName(candidateRoot);
                 const candIntervals = sortedMidi.map(m => {
                     let diff = (m - candidateRoot) % 12;
                     if (diff < 0) diff += 12;
@@ -1996,14 +2034,13 @@
                 });
                 const candUnique = [...new Set(candIntervals)].sort((a, b) => a - b);
                 const candStr = candUnique.join(',');
-                if (chordMap[candStr] !== undefined) {
-                    const suffix = chordMap[candStr];
-                    return candidateRootName + suffix + (r > 0 ? ` / ${rootName}` : '');
+                if (chordMap3[candStr] !== undefined) {
+                    const suffix = chordMap3[candStr];
+                    return candidateRootName + suffix;
                 }
             }
             
-            // Fallback: list notes
-            return sortedMidi.map(m => midiToNoteName(m).replace(/\d+$/, '')).join(' + ');
+            return sortedMidi.map(m => getCleanName(m)).sort().join(' + ');
         }
 
         let lastPressedMidiStr = "";
