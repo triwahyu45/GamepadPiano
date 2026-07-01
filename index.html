@@ -1086,6 +1086,7 @@
                 <button class="info-tab-btn" onclick="switchInfoTab('tab-keyboard', this)">KEYBOARD</button>
                 <button class="info-tab-btn" onclick="switchInfoTab('tab-mouse', this)">MOUSE & FITUR</button>
                 <button class="info-tab-btn" onclick="switchInfoTab('tab-chord-piano', this)">CHORD PIANO</button>
+                <button class="info-tab-btn" onclick="switchInfoTab('tab-chord-stik', this)">CHORD STIK</button>
             </div>
             
             <!-- Tab Gamepad -->
@@ -1209,6 +1210,81 @@
                                 <td style="padding: 8px; font-weight: bold; color: var(--accent);">Bdim (Lengkap)</td>
                                 <td style="padding: 8px;"><span class="key" style="background: #2b0b15; color: #ff6699; padding: 2px 6px; border-radius: 4px; border: 1px solid #54192b;">D-Right + D-Up + R1</span></td>
                                 <td style="padding: 8px; color: #aaa;">Full Chord (B4 + D5 + F5)</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Tab Chord Stik -->
+            <div id="tab-chord-stik" class="info-tab-content">
+                <p style="font-size: 0.85em; color: #88c2ad; margin-bottom: 10px; text-align: justify; line-height: 1.4; margin-top: 5px;">
+                    Di <b>Chord Mode</b>, gunakan kedua stik analog gamepad Anda untuk memilih root nada dan tipe akord. Nada dasar diatur agar pas sebagai musik pengiring (inversi otomatis):
+                </p>
+                <div style="max-height: 190px; overflow-y: auto; border: 1px solid #1a332a; border-radius: 6px; background: rgba(0, 0, 0, 0.4);">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 0.85em; text-align: left;">
+                        <thead>
+                            <tr style="background: rgba(0, 240, 192, 0.1); border-bottom: 1px solid #1a332a; color: var(--primary);">
+                                <th style="padding: 8px; font-weight: bold; width: 40%;">Kontrol Stik</th>
+                                <th style="padding: 8px; font-weight: bold; width: 35%;">Arah Segmen</th>
+                                <th style="padding: 8px; font-weight: bold;">Output</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr style="border-bottom: 1px solid #11221b;">
+                                <td style="padding: 8px; font-weight: bold; color: var(--primary);">Analog Kiri (L-Stick)</td>
+                                <td style="padding: 8px; color: #aaa;">Arah Segmen (8 Segmen)</td>
+                                <td style="padding: 8px; color: var(--primary); font-weight: bold;">C, D, E, F, G, A, B</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid #11221b;">
+                                <td style="padding: 8px; font-weight: bold; color: var(--primary);">L-Stick (Radius Jarak)</td>
+                                <td style="padding: 8px; color: #aaa;">Jarak Tengah vs Mentok Luar</td>
+                                <td style="padding: 8px; color: #aaa;">Oktaf Rendah vs Oktaf Tinggi</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid #11221b;">
+                                <td style="padding: 8px; font-weight: bold; color: var(--primary);">Analog Kanan (R-Stick)</td>
+                                <td style="padding: 8px; color: #aaa;">Arah Segmen (8 Segmen)</td>
+                                <td style="padding: 8px; color: var(--primary); font-weight: bold;">maj, maj7, 7, sus4, m, m7...</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid #11221b;">
+                                <td style="padding: 8px; font-weight: bold; color: var(--accent);">Tombol R1</td>
+                                <td style="padding: 8px; color: #aaa;">Modifier Kres (♯)</td>
+                                <td style="padding: 8px; color: var(--accent); font-weight: bold;">Root + 0.5 Nada</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid #11221b;">
+                                <td style="padding: 8px; font-weight: bold; color: #0066ff;">Tombol L1</td>
+                                <td style="padding: 8px; color: #aaa;">Modifier Mol (♭)</td>
+                                <td style="padding: 8px; color: #0066ff; font-weight: bold;">Root - 0.5 Nada</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid #11221b;">
+                                <td style="padding: 8px; font-weight: bold; color: #aaa;">Arah L-Stick (Detail)</td>
+                                <td style="padding: 8px; font-size: 0.9em; line-height: 1.4; color: #aaa;">
+                                    ⬆️ Atas = C<br>
+                                    ↗️ Kanan Atas = D<br>
+                                    ➡️ Kanan = E<br>
+                                    ↘️ Kanan Bawah = F
+                                </td>
+                                <td style="padding: 8px; font-size: 0.9em; line-height: 1.4; color: #aaa;">
+                                    ⬇️ Bawah = G<br>
+                                    ↙️ Kiri Bawah = A<br>
+                                    ⬅️ Kiri = B<br>
+                                    ↖️ Kiri Atas = [Kosong]
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 8px; font-weight: bold; color: #aaa;">Arah R-Stick (Detail)</td>
+                                <td style="padding: 8px; font-size: 0.9em; line-height: 1.4; color: #aaa;">
+                                    ⬆️ Atas = maj<br>
+                                    ↗️ Kanan Atas = maj7<br>
+                                    ➡️ Kanan = 7<br>
+                                    ↘️ Kanan Bawah = sus4
+                                </td>
+                                <td style="padding: 8px; font-size: 0.9em; line-height: 1.4; color: #aaa;">
+                                    ⬇️ Bawah = m<br>
+                                    ↙️ Kiri Bawah = m7<br>
+                                    ⬅️ Kiri = dim<br>
+                                    ↖️ Kiri Atas = aug
+                                </td>
                             </tr>
                         </tbody>
                     </table>
@@ -1986,6 +2062,7 @@
 
             try {
                 await Tone.start();
+                Tone.context.lookAhead = 0.015; // Enable ultra-low latency Web Audio scheduling
 
                 // Ambil instrumen dan sustain yang tersimpan
                 const savedInstrument = localStorage.getItem('gamepad_piano_instrument') || document.getElementById('instrument-select').value;
