@@ -2257,11 +2257,11 @@
                 activeEngine.dispose();
             }
 
-            if (!globalReverb) globalReverb = new Tone.Reverb({ decay: 2.5, preDelay: 0.1, wet: 0.3 }).toDestination();
+            if (!globalReverb) globalReverb = new Tone.Reverb({ decay: 4.0, preDelay: 0.1, wet: 0.4 }).toDestination();
             if (!softFilter) softFilter = new Tone.Filter(1200, "lowpass").connect(globalReverb);
 
             const isSustain = document.getElementById('sustain-toggle').checked;
-            const releaseTime = isSustain ? 4.5 : 0.1;
+            const releaseTime = isSustain ? 8.0 : 0.1;
 
             if (SOUNDBANKS[type]) {
                 activeEngine = new Tone.Sampler({
@@ -2566,7 +2566,7 @@
         });
 
         document.getElementById('sustain-toggle').addEventListener('change', (e) => {
-            const releaseTime = e.target.checked ? 4.5 : 0.1;
+            const releaseTime = e.target.checked ? 8.0 : 0.1;
             localStorage.setItem('gamepad_piano_sustain', e.target.checked);
             if (activeEngine) {
                 if (activeEngine.name === "Sampler") activeEngine.release = releaseTime;
