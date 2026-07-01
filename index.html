@@ -378,7 +378,9 @@
             padding-bottom: 16px;
             color: #000;
             font-weight: 800;
-            transition: background 0.04s, box-shadow 0.04s, transform 0.04s;
+            /* Performance: restrict transition only to transform attribute */
+            transition: transform 0.04s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            will-change: transform;
             position: relative;
             /* Right border = thin divider between keys (no gap needed) */
             border-right: 1px solid #bbb;
@@ -397,7 +399,8 @@
         .white-key.active {
             background: linear-gradient(180deg, var(--primary) 0%, #00c9a0 70%, #00a882 100%);
             box-shadow: inset 0 0 16px rgba(0,0,0,0.3), 0 0 18px var(--primary-dim);
-            transform: translateY(3px);
+            /* Performance: GPU-accelerated translate3d */
+            transform: translate3d(0, 3px, 0);
             border-color: var(--primary);
         }
 
@@ -426,7 +429,9 @@
                 inset -1px 0 2px rgba(0,0,0,0.8),
                 inset 0 -6px 10px rgba(0,0,0,0.9),
                 3px 5px 10px rgba(0,0,0,0.85);            /* right/bottom depth */
-            transition: background 0.04s, box-shadow 0.04s, transform 0.04s;
+            /* Performance: restrict transition to transform attribute */
+            transition: transform 0.04s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            will-change: transform;
             display: flex;
             flex-direction: column;
             justify-content: flex-end;
@@ -440,7 +445,8 @@
             background: linear-gradient(180deg, var(--accent) 0%, #cc0044 100%);
             border-color: var(--accent);
             box-shadow: 0 0 16px var(--accent), inset 0 0 10px rgba(0,0,0,0.4);
-            transform: translateY(2px);
+            /* Performance: GPU-accelerated translate3d */
+            transform: translate3d(0, 2px, 0);
         }
 
         .note-label {
@@ -1275,6 +1281,7 @@
         let currentMode = localStorage.getItem('gamepad_piano_mode') || 'piano';
         let baseMidi = 60; // Start at C4
         let DYNAMIC_BUTTON_MAP = {};
+        let midiToElementMap = {}; // Performance cache: maps midi number to DOM key element
         let isInitializing = false;
         let isOverlayVisible = true;
 
@@ -1477,13 +1484,15 @@
         }
 
         function highlightPianoKeysForChord(notes) {
-            document.querySelectorAll('.white-key, .black-key').forEach(el => { el.classList.remove('active'); });
+            for (const midi in midiToElementMap) {
+                midiToElementMap[midi].classList.remove('active');
+            }
             if (!notes || notes.length === 0) return;
 
             notes.forEach(note => {
                 const midi = noteToMidi(note);
                 if (midi !== null) {
-                    const domEl = document.getElementById('key-' + midi);
+                    const domEl = midiToElementMap[midi];
                     if (domEl) {
                         domEl.classList.add('active');
                     }
@@ -1492,10 +1501,12 @@
         }
 
         function highlightSinglePianoKey(note) {
-            document.querySelectorAll('.white-key, .black-key').forEach(el => { el.classList.remove('active'); });
+            for (const midi in midiToElementMap) {
+                midiToElementMap[midi].classList.remove('active');
+            }
             const midi = noteToMidi(note);
             if (midi !== null) {
-                const domEl = document.getElementById('key-' + midi);
+                const domEl = midiToElementMap[midi];
                 if (domEl) {
                     domEl.classList.add('active');
                 }
@@ -1655,9 +1666,18 @@
                 pianoWrapper.appendChild(whiteKeyDiv);
             }
 
+            // Populate the midiToElementMap cache for fast lookup
+            midiToElementMap = {};
+            for (let midi = KEYBOARD_START; midi <= KEYBOARD_END; midi++) {
+                const el = document.getElementById('key-' + midi);
+                if (el) {
+                    midiToElementMap[midi] = el;
+                }
+            }
+
             // Auto-scroll so the active octave (baseMidi) is centered in the viewport
             requestAnimationFrame(() => {
-                const activeKey = document.getElementById('key-' + (baseMidi + currentTranspose));
+                const activeKey = midiToElementMap[baseMidi + currentTranspose];
                 if (activeKey) {
                     const wrapper = document.getElementById('piano-wrapper');
                     const keyLeft = activeKey.offsetLeft;
@@ -1893,6 +1913,7 @@
                 regeneratePianoKeys(); // Render keys pertama kali
                 await switchInstrument(savedInstrument, true);
                 updateGamepadStatus();
+                checkInitialGamepad();
             } catch (error) {
                 console.error(error);
                 isInitializing = false;
@@ -1967,7 +1988,9 @@
             if (typeof stopArpeggio === 'function') stopArpeggio();
 
             activeNotes = {}; activeChordId = null; activeChordNotes = []; chordModifier = 0;
-            document.querySelectorAll('.white-key').forEach(el => { el.classList.remove('active', 'sharp', 'flat'); });
+            for (const midi in midiToElementMap) {
+                midiToElementMap[midi].classList.remove('active', 'sharp', 'flat');
+            }
             const modText = document.getElementById('chord-modifier-text');
             if (modText) modText.innerText = '';
 
@@ -2070,8 +2093,7 @@
                     activeEngine.triggerAttack(noteName);
                     keyboardActiveNotes[rawKey] = noteName;
 
-                    const btnIndex = PIANO_BUTTONS[keyIndex];
-                    const domEl = document.getElementById('key-' + btnIndex);
+                    const domEl = midiToElementMap[midiVal];
                     if (domEl) {
                         domEl.classList.add('active');
                         if (noteName.includes('#')) {
@@ -2093,8 +2115,9 @@
 
                 const keyIndex = KEYBOARD_PLAY_KEYS[rawKey];
                 if (keyIndex !== undefined) {
-                    const btnIndex = PIANO_BUTTONS[keyIndex];
-                    const domEl = document.getElementById('key-' + btnIndex);
+                    const visibleNotes = generateContiguousScaleNotes(PIANO_BUTTONS.length);
+                    const midiVal = visibleNotes[keyIndex] + currentTranspose;
+                    const domEl = midiToElementMap[midiVal];
                     if (domEl) {
                         domEl.classList.remove('active', 'sharp', 'flat');
                     }
@@ -2394,14 +2417,17 @@
             dot.style.opacity = Math.hypot(x, y) < 0.05 ? '0.65' : '1';
         }
 
-        const worker = new Worker(URL.createObjectURL(new Blob([`
-            setInterval(() => postMessage('poll'), 16);
-        `], { type: 'application/javascript' })));
-
         let gamepadIndex = null;
         let previousButtons = [];
+        let pollingActive = false;
 
-        worker.onmessage = function () {
+        function runGamepadPollLoop() {
+            if (!pollingActive) return;
+            pollGamepadState();
+            requestAnimationFrame(runGamepadPollLoop);
+        }
+
+        function pollGamepadState() {
             // Cek jika overlay inisialisasi masih aktif dan user menekan tombol APAPUN pada gamepad
             if (isOverlayVisible && gamepadIndex !== null) {
                 const pad = navigator.getGamepads()[gamepadIndex];
@@ -2429,7 +2455,9 @@
                     activeEngine.releaseAll();
                     activeNotes = {};
                     if (typeof resetChordState === 'function') resetChordState();
-                    document.querySelectorAll('.white-key').forEach(el => { el.classList.remove('active', 'sharp', 'flat'); });
+                    for (const midi in midiToElementMap) {
+                        midiToElementMap[midi].classList.remove('active', 'sharp', 'flat');
+                    }
                 }
 
                 // 1. D-Up (12) / D-Down (13) -> Instrument
@@ -2495,7 +2523,7 @@
                     const currentMod = btnInfo.side === 'right' ? rightMod : leftMod;
 
                     const targetNote = transposeNote(btnInfo.note, currentMod);
-                    const domEl = document.getElementById(btnInfo.id);
+                    const domEl = midiToElementMap[btnInfo.midi];
 
                     if (isPressed && !wasPressed) {
                         if (activeNotes[i]) activeEngine.triggerRelease(activeNotes[i].note);
@@ -2643,7 +2671,7 @@
             for (let i = 0; i < pad.buttons.length; i++) {
                 previousButtons[i] = pad.buttons[i].pressed;
             }
-        };
+        }
 
         function updateGamepadStatus() {
             const statusDiv = document.getElementById("status");
@@ -2656,15 +2684,41 @@
             }
         }
 
+        function checkInitialGamepad() {
+            const gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
+            let found = false;
+            for (let i = 0; i < gamepads.length; i++) {
+                if (gamepads[i]) {
+                    gamepadIndex = gamepads[i].index;
+                    found = true;
+                    break;
+                }
+            }
+            if (found) {
+                updateGamepadStatus();
+                if (!pollingActive) {
+                    pollingActive = true;
+                    runGamepadPollLoop();
+                }
+            }
+        }
+
         window.addEventListener("gamepadconnected", (e) => {
             gamepadIndex = e.gamepad.index;
-            if (isAudioReady) updateGamepadStatus();
+            if (isAudioReady) {
+                updateGamepadStatus();
+                if (!pollingActive) {
+                    pollingActive = true;
+                    runGamepadPollLoop();
+                }
+            }
         });
 
         window.addEventListener("gamepaddisconnected", (e) => {
             if (e.gamepad.index === gamepadIndex) {
                 gamepadIndex = null;
                 updateGamepadStatus();
+                pollingActive = false;
             }
         });
     </script>
