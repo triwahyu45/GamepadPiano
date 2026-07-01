@@ -446,6 +446,7 @@
             /* Performance: restrict transition only to transform attribute */
             transition: transform 0.04s cubic-bezier(0.25, 0.46, 0.45, 0.94);
             will-change: transform;
+            touch-action: none;
             position: relative;
             /* Right border = thin divider between keys (no gap needed) */
             border-right: 1px solid #bbb;
@@ -1821,9 +1822,13 @@
             });
 
             keyDiv.addEventListener('pointerleave', (e) => {
-                e.stopPropagation();
-                e.preventDefault();
-                releasePointer(e.pointerId);
+                // Only release on pointerleave for mouse cursors. 
+                // For touch pointers, sliding slightly shouldn't cut the note off.
+                if (e.pointerType === 'mouse') {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    releasePointer(e.pointerId);
+                }
             });
         }
 
