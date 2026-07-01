@@ -2173,6 +2173,22 @@
         let activeChordNotes = [];
         let lastVisualModifier = null;
 
+        function resolveChordNotes(rootMidi, type, modifier = 0) {
+            // Shift the root midi down by 1 octave so chords play in a warmer accompaniment register
+            const shiftedRoot = rootMidi - 12 + modifier;
+            // Define the C boundary of the next octave. All notes of the chord will fold inside [baseC, baseC + 11]
+            const baseC = shiftedRoot - (shiftedRoot % 12);
+            const boundaryMidi = baseC + 12;
+
+            return CHORD_INTERVALS[type].map(semitone => {
+                let noteMidi = shiftedRoot + semitone;
+                while (noteMidi >= boundaryMidi) {
+                    noteMidi -= 12;
+                }
+                return Tone.Frequency(noteMidi, "midi").toNote();
+            });
+        }
+
         function clearWheelLabels(containerId) {
             const container = document.getElementById(containerId);
             if (!container) return;
@@ -2275,9 +2291,7 @@
                     const rootNameWithMod = rootItem.label;
                     document.getElementById('active-chord-text').innerText = `${rootNameWithMod}${type}`;
 
-                    activeChordNotes = CHORD_INTERVALS[type].map(semitone =>
-                        Tone.Frequency(rootMidi + semitone, "midi").toNote()
-                    );
+                    activeChordNotes = resolveChordNotes(rootMidi, type, 0);
 
                     if (currentChordPlay === 'arpeggio') startArpeggio(activeChordNotes);
                     else if (currentChordPlay === 'strum') startStrum(activeChordNotes);
@@ -2631,9 +2645,7 @@
                         document.getElementById(safeLabelId('label-wheel-left', rootLabel))?.classList.add('active');
                         document.getElementById(safeLabelId('label-wheel-right', type))?.classList.add('active');
 
-                        activeChordNotes = CHORD_INTERVALS[type].map(semitone => {
-                            return Tone.Frequency(rootMidi + semitone + chordModifier, "midi").toNote();
-                        });
+                        activeChordNotes = resolveChordNotes(rootMidi, type, chordModifier);
 
                         if (currentChordPlay === 'arpeggio') {
                             startArpeggio(activeChordNotes);
