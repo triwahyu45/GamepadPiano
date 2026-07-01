@@ -2091,14 +2091,45 @@
 
         let lastPressedMidiStr = "";
         function updateActiveKeysStatus() {
-            const activeMidis = [];
-            for (const midi in midiToElementMap) {
-                if (midiToElementMap[midi].classList.contains('active')) {
-                    activeMidis.push(parseInt(midi));
+            const activeMidis = new Set();
+            
+            // 1. Gamepad notes
+            if (currentMode === 'piano') {
+                for (const k in activeNotes) {
+                    if (activeNotes[k]) {
+                        try {
+                            activeMidis.add(Tone.Frequency(activeNotes[k].note).toMidi());
+                        } catch (err) {}
+                    }
+                }
+            } else {
+                activeChordNotes.forEach(note => {
+                    try {
+                        activeMidis.add(Tone.Frequency(note).toMidi());
+                    } catch (err) {}
+                });
+            }
+            
+            // 2. Touch/Pointer notes
+            for (const k in pointerActiveNotes) {
+                if (pointerActiveNotes[k]) {
+                    try {
+                        activeMidis.add(Tone.Frequency(pointerActiveNotes[k].note).toMidi());
+                    } catch (err) {}
                 }
             }
             
-            const midiStr = activeMidis.join(',');
+            // 3. Keyboard notes
+            for (const k in keyboardActiveNotes) {
+                if (keyboardActiveNotes[k]) {
+                    try {
+                        activeMidis.add(Tone.Frequency(keyboardActiveNotes[k].note).toMidi());
+                    } catch (err) {}
+                }
+            }
+            
+            const activeMidiArray = Array.from(activeMidis).sort((a, b) => a - b);
+            const midiStr = activeMidiArray.join(',');
             if (midiStr === lastPressedMidiStr) return;
             lastPressedMidiStr = midiStr;
             
@@ -2106,7 +2137,7 @@
             const detectedChordEl = document.getElementById('detected-chord-display');
             if (!pressedKeysEl || !detectedChordEl) return;
             
-            if (activeMidis.length === 0) {
+            if (activeMidiArray.length === 0) {
                 pressedKeysEl.textContent = "-";
                 detectedChordEl.textContent = "-";
                 return;
@@ -2128,22 +2159,30 @@
                 '15': '➡️ D-Right'
             };
             
-            const pressedKeysText = activeMidis.map(m => {
+            const pressedKeysText = activeMidiArray.map(m => {
                 const noteName = midiToNoteName(m);
-                // Check if this MIDI is mapped to any gamepad button index
-                const btnIdx = Object.keys(DYNAMIC_BUTTON_MAP).find(k => DYNAMIC_BUTTON_MAP[k].midi === m);
                 
-                // If it has a mapping and that button is currently tracked as active in gamepad play
-                if (btnIdx !== undefined && activeNotes[btnIdx]) {
-                    const sym = gamepadSymbolMap[btnIdx] || BUTTON_LABELS[btnIdx];
-                    return `${noteName} (${sym})`;
+                // If in piano mode, check if this midi matches any active gamepad note
+                if (currentMode === 'piano') {
+                    const btnIdx = Object.keys(activeNotes).find(k => {
+                        if (!activeNotes[k]) return false;
+                        try {
+                            return Tone.Frequency(activeNotes[k].note).toMidi() === m;
+                        } catch (err) {
+                            return false;
+                        }
+                    });
+                    if (btnIdx !== undefined) {
+                        const sym = gamepadSymbolMap[btnIdx] || BUTTON_LABELS[btnIdx];
+                        return `${noteName} (${sym})`;
+                    }
                 }
                 return noteName;
             });
             
             pressedKeysEl.textContent = pressedKeysText.join(', ');
             
-            const chord = detectCurrentChord(activeMidis);
+            const chord = detectCurrentChord(activeMidiArray);
             detectedChordEl.textContent = chord;
         }
 
