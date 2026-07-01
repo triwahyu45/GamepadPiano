@@ -354,6 +354,71 @@
             transform: translate(-50%, -50%) scale(1);
         }
 
+        /* Realtime Active Keys & Chord Status Bar */
+        .active-status-bar {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            width: calc(100% - 30px);
+            max-width: 900px;
+            background: rgba(4, 12, 9, 0.85);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(0, 240, 192, 0.15);
+            border-radius: 6px;
+            padding: 6px 14px;
+            box-sizing: border-box;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), inset 0 0 10px rgba(0, 240, 192, 0.05);
+            transition: top 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+            z-index: 10;
+        }
+
+        #mode-container.mode-piano .active-status-bar {
+            top: 12px;
+        }
+
+        #mode-container.mode-chord .active-status-bar {
+            top: 342px;
+        }
+
+        .status-item {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .status-item:last-child {
+            text-align: right;
+            align-items: flex-end;
+        }
+
+        .status-label {
+            font-size: 0.6em;
+            color: #5b8778;
+            letter-spacing: 1px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .status-value {
+            font-size: 0.95em;
+            font-weight: bold;
+            color: var(--primary);
+            text-shadow: 0 0 8px rgba(0, 240, 192, 0.3);
+            font-family: monospace;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 400px;
+        }
+
+        #detected-chord-display {
+            color: var(--accent);
+            text-shadow: 0 0 8px rgba(255, 0, 85, 0.3);
+        }
+
         #mode-container.mode-chord .chord-display-area {
             opacity: 1;
             pointer-events: auto;
@@ -1073,15 +1138,158 @@
         </div>
     </div>
 
-    <!-- Dedicated Info Modal -->
-    <div id="info-modal" style="display: none;">
-        <div class="welcome-card info-card">
-            <div class="info-header" style="width: 100%; display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
-                <h2 class="app-welcome-title" style="font-size: 1.4em; text-align: left; letter-spacing: 1px;">Panduan Kontrol</h2>
-                <button class="close-modal-btn" onclick="toggleInfoModal()">✖</button>
+
+
+    <div class="top-controls">
+        <div class="config-row">
+            <div id="status">OS: MENUNGGU PERANGKAT</div>
+            <button class="info-trigger-btn" onclick="toggleInfoModal()">PANDUAN</button>
+            <button class="info-trigger-btn" id="fullscreen-btn" onclick="toggleFullscreen()" style="border-color: var(--accent); color: var(--accent); box-shadow: 0 0 10px rgba(255, 0, 85, 0.1); background: rgba(255, 0, 85, 0.05);">🗖 FULLSCREEN</button>
+
+            <div class="select-wrapper" style="flex: 1.5">
+                <select id="instrument-select">
+                    <optgroup label="Sintesis Analog (Instan - Ringan)">
+                        <option value="triangle">Soft Triangle (Klasik)</option>
+                        <option value="sine">Soft Sine (Murni)</option>
+                        <option value="square">Square (Retro 8-bit)</option>
+                        <option value="sawtooth">Chainsaw (Tajam)</option>
+                    </optgroup>
+                    <optgroup label="Sintesis Elektronik (Instan)">
+                        <option value="fm-epiano">Electric Piano</option>
+                        <option value="fm-bell">Crystal Bell</option>
+                        <option value="am-pad">Atmospheric Pad</option>
+                    </optgroup>
+                    <optgroup label="Pianoforte & Organ (Download via 🌐)">
+                        <option value="grand-piano">Acoustic Grand Piano ⬇️</option>
+                        <option value="salamander">Salamander Grand Piano (Lite) ⬇️</option>
+                        <option value="organ">Church Organ ⬇️</option>
+                        <option value="harp">Concert Harp ⬇️</option>
+                    </optgroup>
+                    <optgroup label="Gitar & Dawai (Download via 🌐)">
+                        <option value="nylon">Nylon Acoustic Guitar ⬇️</option>
+                        <option value="guitar-acoustic">Steel Acoustic Guitar ⬇️</option>
+                        <option value="guitar-electric">Jazz Electric Guitar ⬇️</option>
+                        <option value="violin">Orchestral Violin ⬇️</option>
+                        <option value="cello">Orchestral Cello ⬇️</option>
+                        <option value="bass-electric">Electric Bass ⬇️</option>
+                    </optgroup>
+                    <optgroup label="Tiup & Perkusi (Download via 🌐)">
+                        <option value="flute">Concert Flute ⬇️</option>
+                        <option value="saxophone">Tenor Saxophone ⬇️</option>
+                        <option value="trumpet">Classic Trumpet ⬇️</option>
+                        <option value="xylophone">Orchestral Xylophone ⬇️</option>
+                    </optgroup>
+                </select>
+            </div>
+
+            <div class="select-wrapper">
+                <select id="scale-select">
+                    <optgroup label="Scale Type">
+                        <option value="major" selected>Major Scale</option>
+                        <option value="minor">Minor Scale</option>
+                        <option value="pentatonic">Pentatonic</option>
+                        <option value="blues">Blues Scale</option>
+                        <option value="chromatic">Chromatic</option>
+                    </optgroup>
+                </select>
+            </div>
+
+            <div class="select-wrapper">
+                <select id="range-select">
+                    <optgroup label="Base Octave">
+                        <option value="1">Low (C3)</option>
+                        <option value="2" selected>Medium (C4)</option>
+                        <option value="3">High (C5)</option>
+                    </optgroup>
+                </select>
+            </div>
+
+            <div class="select-wrapper">
+                <select id="chord-play-select">
+                    <optgroup label="Chord Play Mode">
+                        <option value="block" selected>Block Chord (Simultan)</option>
+                        <option value="strum">Strum (Genjreng)</option>
+                        <option value="arpeggio">Arpeggio (Petikan Loop)</option>
+                    </optgroup>
+                </select>
+            </div>
+
+            <div class="sustain-panel">
+                <span>SUSTAIN</span>
+                <label class="switch">
+                    <input type="checkbox" id="sustain-toggle" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <div class="transpose-panel">
+                <button class="transpose-btn" onclick="adjustTranspose(-1)">-</button>
+                <span id="transpose-val">TRANSPOSE: 0</span>
+                <button class="transpose-btn" onclick="adjustTranspose(1)">+</button>
+            </div>
+
+            <div class="mode-tabs-container">
+                <button class="mode-tab-btn active" data-mode="piano" onclick="setPlayMode('piano')">PIANO MODE</button>
+                <button class="mode-tab-btn" data-mode="chord" onclick="setPlayMode('chord')">CHORD MODE</button>
+            </div>
+        </div>
+
+        <div id="progress-container">
+            <div id="progress-bar"></div>
+        </div>
+
+        <div class="helper-text">
+            <span><b>[OPTIONS]</b> Ganti Mode</span>
+            <span><b>[SHARE + D-Pad/Shoulder/L3]</b> Ubah Setting</span>
+            <span><b>[SHARE + ⬜/🔺/❌]</b> Transpose -/+/Reset</span>
+            <span><b>[L-Stick Y]</b> Shift L-Keys</span>
+            <span><b>[R-Stick Y]</b> Shift R-Keys</span>
+            <span><b>[Keyboard 1-5 / [ / ]]</b> Ubah Setting / Transpose</span>
+            <span><b>[Chord L-Stick Radius]</b> Pilih Octave</span>
+        </div>
+    </div>
+
+    <div id="mode-container" class="mode-piano">
+        <!-- Realtime status bar (moves with piano) -->
+        <div class="active-status-bar">
+            <div class="status-item">
+                <span class="status-label">NADA YANG DITEKAN</span>
+                <span class="status-value" id="pressed-keys-display">-</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">AKORD TERDETEKSI</span>
+                <span class="status-value" id="detected-chord-display">-</span>
+            </div>
+        </div>
+
+        <div class="chord-wheels">
+            <div class="wheel" id="wheel-left">
+                <div class="wheel-center" id="wc-left">ROOT</div>
+                <div class="analog-dot" id="dot-left"></div>
+            </div>
+            <div class="wheel" id="wheel-right">
+                <div class="wheel-center" id="wc-right">TYPE</div>
+                <div class="analog-dot" id="dot-right"></div>
+            </div>
+        </div>
+        <div class="chord-display-area">
+            <div id="active-chord-text"></div>
+            <div id="chord-modifier-text"></div>
+        </div>
+        <div class="piano-wrapper-scroll" id="piano-wrapper-scroll">
+            <div class="piano-wrapper" id="piano-wrapper">
+            </div>
+        </div>
+    </div>
+
+    <!-- Permanent Guide Dashboard Panel -->
+    <div class="guide-dashboard-container" id="guide-dashboard" style="width: calc(100% - 30px); max-width: 900px; margin: 30px auto 40px; box-sizing: border-box;">
+        <div class="welcome-card info-card" style="box-shadow: 0 4px 20px rgba(0,0,0,0.5), inset 0 0 15px rgba(0, 240, 192, 0.05); border: 1px solid rgba(0, 240, 192, 0.15); padding: 20px; box-sizing: border-box; background: rgba(5, 13, 10, 0.9); border-radius: 8px;">
+            <div class="info-header" style="width: 100%; display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid rgba(0, 240, 192, 0.15); padding-bottom: 10px;">
+                <h2 class="app-welcome-title" style="font-size: 1.3em; text-align: left; letter-spacing: 1px; margin: 0; color: var(--primary); text-shadow: 0 0 8px rgba(0, 240, 192, 0.2);">Panduan Kontrol & Cheat Sheet</h2>
             </div>
             
-            <div class="info-tabs">
+            <div class="info-tabs" style="margin-bottom: 15px;">
                 <button class="info-tab-btn active" onclick="switchInfoTab('tab-gamepad', this)">GAMEPAD</button>
                 <button class="info-tab-btn" onclick="switchInfoTab('tab-keyboard', this)">KEYBOARD</button>
                 <button class="info-tab-btn" onclick="switchInfoTab('tab-mouse', this)">MOUSE & FITUR</button>
@@ -1214,7 +1422,7 @@
                         </tbody>
                     </table>
                 </div>
-                <p style="font-size: 0.7em; color: #666; margin-top: 6px; line-height: 1.3; text-align: justify;">
+                <p style="font-size: 0.7em; color: #666; margin-top: 6px; line-height: 1.3; text-align: justify; margin-bottom: 0;">
                     *Info: D-Pad mekanik stik hanya mendeteksi maksimal 2 arah (diagonal). Oleh karena itu, akord C & Em versi lengkap dialihkan menggunakan kombinasi tombol aksi (kanan) & shoulder (R2) agar tetap dapat dimainkan dengan nyaman secara fisik.
                 </p>
             </div>
@@ -1292,136 +1500,6 @@
                         </tbody>
                     </table>
                 </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="top-controls">
-        <div class="config-row">
-            <div id="status">OS: MENUNGGU PERANGKAT</div>
-            <button class="info-trigger-btn" onclick="toggleInfoModal()">PANDUAN</button>
-            <button class="info-trigger-btn" id="fullscreen-btn" onclick="toggleFullscreen()" style="border-color: var(--accent); color: var(--accent); box-shadow: 0 0 10px rgba(255, 0, 85, 0.1); background: rgba(255, 0, 85, 0.05);">🗖 FULLSCREEN</button>
-
-            <div class="select-wrapper" style="flex: 1.5">
-                <select id="instrument-select">
-                    <optgroup label="Sintesis Analog (Instan - Ringan)">
-                        <option value="triangle">Soft Triangle (Klasik)</option>
-                        <option value="sine">Soft Sine (Murni)</option>
-                        <option value="square">Square (Retro 8-bit)</option>
-                        <option value="sawtooth">Chainsaw (Tajam)</option>
-                    </optgroup>
-                    <optgroup label="Sintesis Elektronik (Instan)">
-                        <option value="fm-epiano">Electric Piano</option>
-                        <option value="fm-bell">Crystal Bell</option>
-                        <option value="am-pad">Atmospheric Pad</option>
-                    </optgroup>
-                    <optgroup label="Pianoforte & Organ (Download via 🌐)">
-                        <option value="grand-piano">Acoustic Grand Piano ⬇️</option>
-                        <option value="salamander">Salamander Grand Piano (Lite) ⬇️</option>
-                        <option value="organ">Church Organ ⬇️</option>
-                        <option value="harp">Concert Harp ⬇️</option>
-                    </optgroup>
-                    <optgroup label="Gitar & Dawai (Download via 🌐)">
-                        <option value="nylon">Nylon Acoustic Guitar ⬇️</option>
-                        <option value="guitar-acoustic">Steel Acoustic Guitar ⬇️</option>
-                        <option value="guitar-electric">Jazz Electric Guitar ⬇️</option>
-                        <option value="violin">Orchestral Violin ⬇️</option>
-                        <option value="cello">Orchestral Cello ⬇️</option>
-                        <option value="bass-electric">Electric Bass ⬇️</option>
-                    </optgroup>
-                    <optgroup label="Tiup & Perkusi (Download via 🌐)">
-                        <option value="flute">Concert Flute ⬇️</option>
-                        <option value="saxophone">Tenor Saxophone ⬇️</option>
-                        <option value="trumpet">Classic Trumpet ⬇️</option>
-                        <option value="xylophone">Orchestral Xylophone ⬇️</option>
-                    </optgroup>
-                </select>
-            </div>
-
-            <div class="select-wrapper">
-                <select id="scale-select">
-                    <optgroup label="Scale Type">
-                        <option value="major" selected>Major Scale</option>
-                        <option value="minor">Minor Scale</option>
-                        <option value="pentatonic">Pentatonic</option>
-                        <option value="blues">Blues Scale</option>
-                        <option value="chromatic">Chromatic</option>
-                    </optgroup>
-                </select>
-            </div>
-
-            <div class="select-wrapper">
-                <select id="range-select">
-                    <optgroup label="Base Octave">
-                        <option value="1">Low (C3)</option>
-                        <option value="2" selected>Medium (C4)</option>
-                        <option value="3">High (C5)</option>
-                    </optgroup>
-                </select>
-            </div>
-
-            <div class="select-wrapper">
-                <select id="chord-play-select">
-                    <optgroup label="Chord Play Mode">
-                        <option value="block" selected>Block Chord (Simultan)</option>
-                        <option value="strum">Strum (Genjreng)</option>
-                        <option value="arpeggio">Arpeggio (Petikan Loop)</option>
-                    </optgroup>
-                </select>
-            </div>
-
-            <div class="sustain-panel">
-                <span>SUSTAIN</span>
-                <label class="switch">
-                    <input type="checkbox" id="sustain-toggle" checked>
-                    <span class="slider"></span>
-                </label>
-            </div>
-
-            <div class="transpose-panel">
-                <button class="transpose-btn" onclick="adjustTranspose(-1)">-</button>
-                <span id="transpose-val">TRANSPOSE: 0</span>
-                <button class="transpose-btn" onclick="adjustTranspose(1)">+</button>
-            </div>
-
-            <div class="mode-tabs-container">
-                <button class="mode-tab-btn active" data-mode="piano" onclick="setPlayMode('piano')">PIANO MODE</button>
-                <button class="mode-tab-btn" data-mode="chord" onclick="setPlayMode('chord')">CHORD MODE</button>
-            </div>
-        </div>
-
-        <div id="progress-container">
-            <div id="progress-bar"></div>
-        </div>
-
-        <div class="helper-text">
-            <span><b>[OPTIONS]</b> Ganti Mode</span>
-            <span><b>[SHARE + D-Pad/Shoulder/L3]</b> Ubah Setting</span>
-            <span><b>[SHARE + ⬜/🔺/❌]</b> Transpose -/+/Reset</span>
-            <span><b>[L-Stick Y]</b> Shift L-Keys</span>
-            <span><b>[R-Stick Y]</b> Shift R-Keys</span>
-            <span><b>[Keyboard 1-5 / [ / ]]</b> Ubah Setting / Transpose</span>
-            <span><b>[Chord L-Stick Radius]</b> Pilih Octave</span>
-        </div>
-    </div>
-
-    <div id="mode-container" class="mode-piano">
-        <div class="chord-wheels">
-            <div class="wheel" id="wheel-left">
-                <div class="wheel-center" id="wc-left">ROOT</div>
-                <div class="analog-dot" id="dot-left"></div>
-            </div>
-            <div class="wheel" id="wheel-right">
-                <div class="wheel-center" id="wc-right">TYPE</div>
-                <div class="analog-dot" id="dot-right"></div>
-            </div>
-        </div>
-        <div class="chord-display-area">
-            <div id="active-chord-text"></div>
-            <div id="chord-modifier-text"></div>
-        </div>
-        <div class="piano-wrapper-scroll" id="piano-wrapper-scroll">
-            <div class="piano-wrapper" id="piano-wrapper">
             </div>
         </div>
     </div>
@@ -1869,6 +1947,108 @@
             }
         }
 
+        // --- Real-time Chord Detection & UI Status Update ---
+        function midiToNoteName(midi) {
+            const notes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+            const octave = Math.floor(midi / 12) - 1;
+            return notes[midi % 12] + octave;
+        }
+
+        function detectCurrentChord(midiArray) {
+            if (!midiArray || midiArray.length === 0) return "-";
+            const sortedMidi = [...new Set(midiArray)].sort((a, b) => a - b);
+            
+            if (sortedMidi.length === 1) {
+                return midiToNoteName(sortedMidi[0]);
+            }
+            
+            const rootMidi = sortedMidi[0];
+            const rootName = midiToNoteName(rootMidi).replace(/\d+$/, '');
+            const intervals = sortedMidi.map(m => (m - rootMidi) % 12);
+            const uniqueIntervals = [...new Set(intervals)].sort((a, b) => a - b);
+            const intervalStr = uniqueIntervals.join(',');
+            
+            const chordMap = {
+                '0,7': '5 (Power Chord)',
+                '0,4,7': '',         // Major
+                '0,3,7': 'm',        // Minor
+                '0,3,6': 'dim',      // Diminished
+                '0,4,8': 'aug',      // Augmented
+                '0,5,7': 'sus4',     // Suspended 4
+                '0,2,7': 'sus2',     // Suspended 2
+                '0,4,7,11': 'maj7',  // Major 7
+                '0,3,7,10': 'm7',    // Minor 7
+                '0,4,7,10': '7',     // Dominant 7
+                '0,3,6,10': 'm7b5',  // Half-diminished 7
+                '0,3,6,9': 'dim7',   // Diminished 7
+                '0,4,7,9': '6',      // Major 6
+                '0,3,7,9': 'm6',     // Minor 6
+            };
+            
+            // Check inversions by testing each note as root candidate
+            for (let r = 0; r < sortedMidi.length; r++) {
+                const candidateRoot = sortedMidi[r];
+                const candidateRootName = midiToNoteName(candidateRoot).replace(/\d+$/, '');
+                const candIntervals = sortedMidi.map(m => {
+                    let diff = (m - candidateRoot) % 12;
+                    if (diff < 0) diff += 12;
+                    return diff;
+                });
+                const candUnique = [...new Set(candIntervals)].sort((a, b) => a - b);
+                const candStr = candUnique.join(',');
+                if (chordMap[candStr] !== undefined) {
+                    const suffix = chordMap[candStr];
+                    return candidateRootName + suffix + (r > 0 ? ` / ${rootName}` : '');
+                }
+            }
+            
+            // Fallback: list notes
+            return sortedMidi.map(m => midiToNoteName(m).replace(/\d+$/, '')).join(' + ');
+        }
+
+        let lastPressedMidiStr = "";
+        function updateActiveKeysStatus() {
+            const activeMidis = [];
+            for (const midi in midiToElementMap) {
+                if (midiToElementMap[midi].classList.contains('active')) {
+                    activeMidis.push(parseInt(midi));
+                }
+            }
+            
+            const midiStr = activeMidis.join(',');
+            if (midiStr === lastPressedMidiStr) return;
+            lastPressedMidiStr = midiStr;
+            
+            const pressedKeysEl = document.getElementById('pressed-keys-display');
+            const detectedChordEl = document.getElementById('detected-chord-display');
+            if (!pressedKeysEl || !detectedChordEl) return;
+            
+            if (activeMidis.length === 0) {
+                pressedKeysEl.textContent = "-";
+                detectedChordEl.textContent = "-";
+                return;
+            }
+            
+            const noteNames = activeMidis.map(m => midiToNoteName(m));
+            pressedKeysEl.textContent = noteNames.join(', ');
+            
+            const chord = detectCurrentChord(activeMidis);
+            detectedChordEl.textContent = chord;
+        }
+
+        function startUiUpdateLoop() {
+            function updateUi() {
+                if (isAudioReady) {
+                    updateActiveKeysStatus();
+                }
+                requestAnimationFrame(updateUi);
+            }
+            requestAnimationFrame(updateUi);
+        }
+
+        // Start UI update loop immediately
+        startUiUpdateLoop();
+
         // --- Sistem Manajemen Audio ---
         let activeEngine = null;
         let globalReverb = null;
@@ -2189,12 +2369,9 @@
         }
 
         function toggleInfoModal() {
-            const modal = document.getElementById('info-modal');
-            if (!modal) return;
-            if (modal.style.display === 'none') {
-                modal.style.display = 'flex';
-            } else {
-                modal.style.display = 'none';
+            const guide = document.getElementById('guide-dashboard');
+            if (guide) {
+                guide.scrollIntoView({ behavior: 'smooth' });
             }
         }
 
