@@ -2267,7 +2267,7 @@
                 activeEngine = new Tone.Sampler({
                     ...SOUNDBANKS[type],
                     release: releaseTime,
-                    attack: 0.05
+                    attack: 0 // Instant sampler playback starting at 0ms
                 }).connect(globalReverb);
 
                 await Tone.loaded();
@@ -2276,22 +2276,22 @@
                 if (type === 'fm-epiano') {
                     activeEngine = new Tone.PolySynth(Tone.FMSynth, {
                         harmonicity: 3, modulationIndex: 10, oscillator: { type: "sine" },
-                        envelope: { attack: 0.01, decay: 0.2, sustain: 0.5, release: releaseTime }
+                        envelope: { attack: 0.002, decay: 0.2, sustain: 0.5, release: releaseTime }
                     }).connect(globalReverb);
                 } else if (type === 'fm-bell') {
                     activeEngine = new Tone.PolySynth(Tone.FMSynth, {
                         harmonicity: 2.5, modulationIndex: 20,
-                        envelope: { attack: 0.01, decay: 0.5, sustain: 0.1, release: releaseTime }
+                        envelope: { attack: 0.002, decay: 0.5, sustain: 0.1, release: releaseTime }
                     }).connect(globalReverb);
                 } else if (type === 'am-pad') {
                     activeEngine = new Tone.PolySynth(Tone.AMSynth, {
                         harmonicity: 0.5, oscillator: { type: "triangle" },
-                        envelope: { attack: 0.4, decay: 0.2, sustain: 0.8, release: releaseTime }
+                        envelope: { attack: 0.4, decay: 0.2, sustain: 0.8, release: releaseTime } // Slow fade-in is intentional for pads
                     }).connect(globalReverb);
                 } else {
                     activeEngine = new Tone.PolySynth(Tone.Synth, {
                         oscillator: { type: type },
-                        envelope: { attack: 0.02, decay: 0.1, sustain: 0.8, release: releaseTime },
+                        envelope: { attack: 0.002, decay: 0.1, sustain: 0.8, release: releaseTime },
                         volume: type === 'sawtooth' ? -10 : -2
                     }).connect(softFilter);
                 }
@@ -3018,8 +3018,15 @@
                 updateAnalogDot('dot-right', typeState.x, typeState.y, dotRadius);
 
                 // Merge gamepad stick state with pointer/touch wheel selection
-                const rootIndex = rootState.active ? rootState.segment : pointerLeftSegment;
-                const typeIndex = typeState.active ? typeState.segment : pointerRightSegment;
+                let rootIndex = rootState.active ? rootState.segment : pointerLeftSegment;
+                let typeIndex = typeState.active ? typeState.segment : pointerRightSegment;
+
+                // If L-Stick is centered (no root selected) but R-Stick is held (selecting type),
+                // we treat rootIndex as null so the chord stops when L-Stick is released.
+                if (typeState.active && !rootState.active) {
+                    rootIndex = null;
+                }
+
                 const pointerOctave = 0; // pointer selection always uses base octave
 
                 let newModifier = 0;
@@ -3079,7 +3086,7 @@
                             highlightPianoKeysForChord(activeChordNotes);
                         }
                     }
-                } else if (pointerLeftSegment === null && pointerRightSegment === null) {
+                } else {
                     document.getElementById('wc-left').classList.remove('active');
                     document.getElementById('wc-right').classList.remove('active');
 
