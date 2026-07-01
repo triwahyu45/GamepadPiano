@@ -1518,6 +1518,12 @@
                     }
                 });
             }
+            const pWrapper = document.getElementById('piano-wrapper');
+            if (pWrapper) {
+                pWrapper.addEventListener('scroll', () => {
+                    localStorage.setItem('gamepad_piano_scroll', pWrapper.scrollLeft);
+                }, { passive: true });
+            }
         });
 
         // Hysteresis states untuk analog stick chord mode
@@ -1837,15 +1843,21 @@
                 }
             }
 
-            // Auto-scroll so the active octave (baseMidi) is centered in the viewport
+            // Restore manual scroll position or auto-scroll to center the active octave
             requestAnimationFrame(() => {
-                const activeKey = midiToElementMap[baseMidi + currentTranspose];
-                if (activeKey) {
-                    const wrapper = document.getElementById('piano-wrapper');
-                    const keyLeft = activeKey.offsetLeft;
-                    const wrapperWidth = wrapper.clientWidth;
-                    const keyWidth = activeKey.offsetWidth;
-                    wrapper.scrollLeft = keyLeft - (wrapperWidth / 2) + (keyWidth / 2);
+                const wrapper = document.getElementById('piano-wrapper');
+                if (!wrapper) return;
+                const savedScroll = localStorage.getItem('gamepad_piano_scroll');
+                if (savedScroll !== null) {
+                    wrapper.scrollLeft = parseInt(savedScroll);
+                } else {
+                    const activeKey = midiToElementMap[baseMidi + currentTranspose];
+                    if (activeKey) {
+                        const keyLeft = activeKey.offsetLeft;
+                        const wrapperWidth = wrapper.clientWidth;
+                        const keyWidth = activeKey.offsetWidth;
+                        wrapper.scrollLeft = keyLeft - (wrapperWidth / 2) + (keyWidth / 2);
+                    }
                 }
             });
 
@@ -2133,6 +2145,7 @@
         function adjustTranspose(amount) {
             currentTranspose = Math.max(-12, Math.min(12, currentTranspose + amount));
             localStorage.setItem('gamepad_piano_transpose', currentTranspose);
+            localStorage.removeItem('gamepad_piano_scroll'); // Clear custom scroll to center on new transpose range
             const valEl = document.getElementById('transpose-val');
             if (valEl) {
                 valEl.innerText = `TRANSPOSE: ${currentTranspose > 0 ? '+' : ''}${currentTranspose}`;
@@ -2296,12 +2309,14 @@
         document.getElementById('scale-select').addEventListener('change', (e) => {
             currentScale = e.target.value;
             localStorage.setItem('gamepad_piano_scale', currentScale);
+            localStorage.removeItem('gamepad_piano_scroll'); // Clear custom scroll
             regeneratePianoKeys();
         });
 
         document.getElementById('range-select').addEventListener('change', (e) => {
             currentRange = parseInt(e.target.value);
             localStorage.setItem('gamepad_piano_range', currentRange);
+            localStorage.removeItem('gamepad_piano_scroll'); // Clear custom scroll
             regeneratePianoKeys();
         });
 
