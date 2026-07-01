@@ -1085,6 +1085,7 @@
                 <button class="info-tab-btn active" onclick="switchInfoTab('tab-gamepad', this)">GAMEPAD</button>
                 <button class="info-tab-btn" onclick="switchInfoTab('tab-keyboard', this)">KEYBOARD</button>
                 <button class="info-tab-btn" onclick="switchInfoTab('tab-mouse', this)">MOUSE & FITUR</button>
+                <button class="info-tab-btn" onclick="switchInfoTab('tab-chord-piano', this)">CHORD PIANO</button>
             </div>
             
             <!-- Tab Gamepad -->
@@ -1127,6 +1128,91 @@
                     <li><span>Pengaturan Suara</span><span>Pilih dropdown Instrumen, Skala, Oktaf, dll.</span></li>
                     <li><span>Sustain Manual</span><span>Klik sakelar toggle Sustain di kanan atas</span></li>
                 </ul>
+            </div>
+
+            <!-- Tab Chord Piano -->
+            <div id="tab-chord-piano" class="info-tab-content">
+                <p style="font-size: 0.85em; color: #88c2ad; margin-bottom: 10px; text-align: justify; line-height: 1.4; margin-top: 5px;">
+                    Di <b>Piano Mode</b>, Anda dapat memicu harmoni akord indah dengan menekan beberapa tombol stik game secara bersamaan (kombinasi shortcut di Tangga Nada Mayor):
+                </p>
+                <div style="max-height: 190px; overflow-y: auto; border: 1px solid #1a332a; border-radius: 6px; background: rgba(0, 0, 0, 0.4);">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 0.85em; text-align: left;">
+                        <thead>
+                            <tr style="background: rgba(0, 240, 192, 0.1); border-bottom: 1px solid #1a332a; color: var(--primary);">
+                                <th style="padding: 8px; font-weight: bold;">Akord</th>
+                                <th style="padding: 8px; font-weight: bold;">Shortcut (Kombinasi)</th>
+                                <th style="padding: 8px; font-weight: bold;">Jenis Suara</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr style="border-bottom: 1px solid #11221b;">
+                                <td style="padding: 8px; font-weight: bold; color: var(--primary);">C Major</td>
+                                <td style="padding: 8px;"><span class="key" style="background: #112620; color: #7ee8cc; padding: 2px 6px; border-radius: 4px; border: 1px solid #224d40;">D-Down + D-Left</span></td>
+                                <td style="padding: 8px; color: #aaa;">Simpel (E4 + G4)</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid #11221b;">
+                                <td style="padding: 8px; font-weight: bold; color: var(--primary);">C (Lengkap)</td>
+                                <td style="padding: 8px;"><span class="key" style="background: #112620; color: #7ee8cc; padding: 2px 6px; border-radius: 4px; border: 1px solid #224d40;">L2 + D-Down + D-Left</span></td>
+                                <td style="padding: 8px; color: #aaa;">Full Chord (C4 + E4 + G4)</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid #11221b;">
+                                <td style="padding: 8px; font-weight: bold; color: var(--accent);">D Major</td>
+                                <td style="padding: 8px;"><span class="key" style="background: #2b0b15; color: #ff6699; padding: 2px 6px; border-radius: 4px; border: 1px solid #54192b;">Cross + Circle</span></td>
+                                <td style="padding: 8px; color: #aaa;">Simpel (F4 + C5)</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid #11221b;">
+                                <td style="padding: 8px; font-weight: bold; color: var(--accent);">Dm (Lengkap)</td>
+                                <td style="padding: 8px;"><span class="key" style="background: #2b0b15; color: #ff6699; padding: 2px 6px; border-radius: 4px; border: 1px solid #54192b;">L1 + Cross + Square</span></td>
+                                <td style="padding: 8px; color: #aaa;">Full Chord (D4 + F4 + A4)</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid #11221b;">
+                                <td style="padding: 8px; font-weight: bold; color: var(--primary);">E Minor</td>
+                                <td style="padding: 8px;"><span class="key" style="background: #112620; color: #7ee8cc; padding: 2px 6px; border-radius: 4px; border: 1px solid #224d40;">D-Left + D-Up</span></td>
+                                <td style="padding: 8px; color: #aaa;">Simpel (G4 + D5)</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid #11221b;">
+                                <td style="padding: 8px; font-weight: bold; color: var(--primary);">Em (Lengkap)</td>
+                                <td style="padding: 8px;"><span class="key" style="background: #112620; color: #7ee8cc; padding: 2px 6px; border-radius: 4px; border: 1px solid #224d40;">D-Down + D-Left + D-Right</span></td>
+                                <td style="padding: 8px; color: #aaa;">Full Chord (E4 + G4 + B4)</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid #11221b;">
+                                <td style="padding: 8px; font-weight: bold; color: var(--primary);">F (Lengkap)</td>
+                                <td style="padding: 8px;"><span class="key" style="background: #112620; color: #7ee8cc; padding: 2px 6px; border-radius: 4px; border: 1px solid #224d40;">Cross + Square + Circle</span></td>
+                                <td style="padding: 8px; color: #aaa;">Full Chord (F4 + A4 + C5)</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid #11221b;">
+                                <td style="padding: 8px; font-weight: bold; color: var(--primary);">G Major</td>
+                                <td style="padding: 8px;"><span class="key" style="background: #112620; color: #7ee8cc; padding: 2px 6px; border-radius: 4px; border: 1px solid #224d40;">D-Right + Cross</span></td>
+                                <td style="padding: 8px; color: #aaa;">Simpel (B4 + F4)</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid #11221b;">
+                                <td style="padding: 8px; font-weight: bold; color: var(--primary);">G (Lengkap)</td>
+                                <td style="padding: 8px;"><span class="key" style="background: #112620; color: #7ee8cc; padding: 2px 6px; border-radius: 4px; border: 1px solid #224d40;">D-Left + D-Right + D-Up</span></td>
+                                <td style="padding: 8px; color: #aaa;">Full Chord (G4 + B4 + D5)</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid #11221b;">
+                                <td style="padding: 8px; font-weight: bold; color: var(--primary);">A Minor</td>
+                                <td style="padding: 8px;"><span class="key" style="background: #112620; color: #7ee8cc; padding: 2px 6px; border-radius: 4px; border: 1px solid #224d40;">Square + Triangle</span></td>
+                                <td style="padding: 8px; color: #aaa;">Simpel (A4 + E5)</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid #11221b;">
+                                <td style="padding: 8px; font-weight: bold; color: var(--primary);">Am (Lengkap)</td>
+                                <td style="padding: 8px;"><span class="key" style="background: #112620; color: #7ee8cc; padding: 2px 6px; border-radius: 4px; border: 1px solid #224d40;">Square + Circle + Triangle</span></td>
+                                <td style="padding: 8px; color: #aaa;">Full Chord (A4 + C5 + E5)</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid #11221b;">
+                                <td style="padding: 8px; font-weight: bold; color: var(--accent);">B minor</td>
+                                <td style="padding: 8px;"><span class="key" style="background: #2b0b15; color: #ff6699; padding: 2px 6px; border-radius: 4px; border: 1px solid #54192b;">L1 + Cross</span></td>
+                                <td style="padding: 8px; color: #aaa;">Simpel (D4 + F4)</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 8px; font-weight: bold; color: var(--accent);">Bdim (Lengkap)</td>
+                                <td style="padding: 8px;"><span class="key" style="background: #2b0b15; color: #ff6699; padding: 2px 6px; border-radius: 4px; border: 1px solid #54192b;">D-Right + D-Up + R1</span></td>
+                                <td style="padding: 8px; color: #aaa;">Full Chord (B4 + D5 + F5)</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
@@ -2707,7 +2793,7 @@
                 }
             }
             if (found) {
-                updateGamepadStatus();
+                if (isAudioReady) updateGamepadStatus();
                 if (!pollingActive) {
                     pollingActive = true;
                     runGamepadPollLoop();
@@ -2719,10 +2805,10 @@
             gamepadIndex = e.gamepad.index;
             if (isAudioReady) {
                 updateGamepadStatus();
-                if (!pollingActive) {
-                    pollingActive = true;
-                    runGamepadPollLoop();
-                }
+            }
+            if (!pollingActive) {
+                pollingActive = true;
+                runGamepadPollLoop();
             }
         });
 
@@ -2733,6 +2819,9 @@
                 pollingActive = false;
             }
         });
+
+        // Detect if a gamepad is already plugged in on page load
+        checkInitialGamepad();
     </script>
 </body>
 
