@@ -1690,6 +1690,67 @@
         let pointerLeftOctave = 0;
         let pointerRightOctave = 0;
 
+        // Touch Analog Joystick tracking for touchscreen / tablet
+        let touchLeftActive = false;
+        let touchLX = 0;
+        let touchLY = 0;
+
+        let touchRightActive = false;
+        let touchRX = 0;
+        let touchRY = 0;
+
+        function setupTouchJoystick(wheelEl, onMove, onEnd) {
+            if (!wheelEl) return;
+
+            function handlePointer(e) {
+                const rect = wheelEl.getBoundingClientRect();
+                const centerX = rect.left + rect.width / 2;
+                const centerY = rect.top + rect.height / 2;
+                const maxRadius = (rect.width / 2) * 0.85;
+
+                if (maxRadius <= 0) return;
+
+                const dx = e.clientX - centerX;
+                const dy = e.clientY - centerY;
+
+                let rawX = dx / maxRadius;
+                let rawY = dy / maxRadius;
+
+                const dist = Math.hypot(rawX, rawY);
+                if (dist > 1) {
+                    rawX /= dist;
+                    rawY /= dist;
+                }
+
+                onMove(rawX, rawY);
+            }
+
+            wheelEl.addEventListener('pointerdown', (e) => {
+                e.preventDefault();
+                try { wheelEl.setPointerCapture(e.pointerId); } catch(err){}
+                handlePointer(e);
+            });
+
+            wheelEl.addEventListener('pointermove', (e) => {
+                if (wheelEl.hasPointerCapture(e.pointerId)) {
+                    e.preventDefault();
+                    handlePointer(e);
+                }
+            });
+
+            const release = (e) => {
+                try {
+                    if (wheelEl.hasPointerCapture(e.pointerId)) {
+                        wheelEl.releasePointerCapture(e.pointerId);
+                    }
+                } catch(err){}
+                onEnd();
+            };
+
+            wheelEl.addEventListener('pointerup', release);
+            wheelEl.addEventListener('pointercancel', release);
+        }
+
         function releasePointer(pointerId) {
             const active = pointerActiveNotes[pointerId];
             if (active) {
@@ -1740,21 +1801,17 @@
 
             const wLeft = document.getElementById('wheel-left');
             if (wLeft) {
-                wLeft.addEventListener('pointerdown', (e) => {
-                    if (!e.target.classList.contains('slice-label')) {
-                        pointerLeftSegment = null;
-                        updatePointerWheelVisuals();
-                    }
-                });
+                setupTouchJoystick(wLeft,
+                    (x, y) => { touchLeftActive = true; touchLX = x; touchLY = y; },
+                    () => { touchLeftActive = false; touchLX = 0; touchLY = 0; }
+                );
             }
             const wRight = document.getElementById('wheel-right');
             if (wRight) {
-                wRight.addEventListener('pointerdown', (e) => {
-                    if (!e.target.classList.contains('slice-label')) {
-                        pointerRightSegment = null;
-                        updatePointerWheelVisuals();
-                    }
-                });
+                setupTouchJoystick(wRight,
+                    (x, y) => { touchRightActive = true; touchRX = x; touchRY = y; },
+                    () => { touchRightActive = false; touchRX = 0; touchRY = 0; }
+                );
             }
             const pWrapper = document.getElementById('piano-wrapper');
             const slider = document.getElementById('piano-scroll-slider');
@@ -3369,12 +3426,17 @@
                         }
                     }
                 }
-            } else if (currentMode === 'chord' && pad.axes.length >= 4) {
-                // Smoothing + deadzone biar titik analog tidak mental/loncat.
-                smoothLX = smoothAxis(smoothLX, pad.axes[0]);
-                smoothLY = smoothAxis(smoothLY, pad.axes[1]);
-                smoothRX = smoothAxis(smoothRX, pad.axes[2]);
-                smoothRY = smoothAxis(smoothRY, pad.axes[3]);
+            } else if (currentMode === 'chord') {
+                // Support both physical Gamepad axes AND Touch Screen Tablet Analog Joysticks
+                const rawLX = touchLeftActive ? touchLX : (pad && pad.axes && pad.axes.length >= 2 ? pad.axes[0] : 0);
+                const rawLY = touchLeftActive ? touchLY : (pad && pad.axes && pad.axes.length >= 2 ? pad.axes[1] : 0);
+                const rawRX = touchRightActive ? touchRX : (pad && pad.axes && pad.axes.length >= 4 ? pad.axes[2] : 0);
+                const rawRY = touchRightActive ? touchRY : (pad && pad.axes && pad.axes.length >= 4 ? pad.axes[3] : 0);
+
+                smoothLX = touchLeftActive ? rawLX : smoothAxis(smoothLX, rawLX);
+                smoothLY = touchLeftActive ? rawLY : smoothAxis(smoothLY, rawLY);
+                smoothRX = touchRightActive ? rawRX : smoothAxis(smoothRX, rawRX);
+                smoothRY = touchRightActive ? rawRY : smoothAxis(smoothRY, rawRY);
 
                 const rootState = getStickStateWithHysteresis(smoothLX, smoothLY, CHORD_ROOT_ITEMS.length, isLeftActive, lastLeftSegment, lastLeftOctave);
                 const typeState = getStickStateWithHysteresis(smoothRX, smoothRY, CHORD_TYPES.length, isRightActive, lastRightSegment, lastRightOctave);
@@ -3432,10 +3494,12 @@
                 const pointerOctave = 0; // pointer selection always uses base octave
 
                 let newModifier = 0;
-                if (pad.buttons[5].pressed) {
-                    newModifier = 1;  // R1 -> Sharp (♯)
-                } else if (pad.buttons[4].pressed) {
-                    newModifier = -1; // L1 -> Flat (♭)
+                if (pad && pad.buttons) {
+                    if (pad.buttons[5] && pad.buttons[5].pressed) {
+                        newModifier = 1;  // R1 -> Sharp (♯)
+                    } else if (pad.buttons[4] && pad.buttons[4].pressed) {
+                        newModifier = -1; // L1 -> Flat (♭)
+                    }
                 }
 
                 updateWheelLabelsVisual(newModifier);
