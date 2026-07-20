@@ -1809,8 +1809,7 @@
             }
         }
 
-        // Sinkronisasi nilai kontrol UI dengan localStorage saat pertama kali dimuat
-        document.addEventListener('DOMContentLoaded', () => {
+        function initializeApp() {
             const savedInstrument = localStorage.getItem('gamepad_piano_instrument');
             if (savedInstrument) {
                 document.getElementById('instrument-select').value = savedInstrument;
@@ -1897,7 +1896,13 @@
                     pWrapper.scrollLeft = (slider.value / 1000) * maxScroll;
                 });
             }
-        });
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeApp);
+        } else {
+            initializeApp();
+        }
 
         // Hysteresis states untuk analog stick chord mode
         let isLeftActive = false;
