@@ -1706,9 +1706,9 @@
             if (!wheelEl) return;
 
             let isDragging = false;
-            let activePointerId = null;
+            let activeTouchId = null;
 
-            function handlePointer(e) {
+            function handleMove(clientX, clientY) {
                 const rect = wheelEl.getBoundingClientRect();
                 const centerX = rect.left + rect.width / 2;
                 const centerY = rect.top + rect.height / 2;
@@ -1716,8 +1716,8 @@
 
                 if (maxRadius <= 0) return;
 
-                const dx = e.clientX - centerX;
-                const dy = e.clientY - centerY;
+                const dx = clientX - centerX;
+                const dy = clientY - centerY;
 
                 let rawX = dx / maxRadius;
                 let rawY = dy / maxRadius;
@@ -1731,99 +1731,68 @@
                 onMove(rawX, rawY);
             }
 
-            function handleTouch(e) {
-                if (!e.touches || e.touches.length === 0) return;
-                let touch = null;
-                // Look for touch that originated in wheelEl
-                for (let i = 0; i < e.touches.length; i++) {
-                    if (wheelEl.contains(e.touches[i].target)) {
-                        touch = e.touches[i];
-                        break;
-                    }
-                }
-                if (!touch) touch = e.touches[0];
-
-                const rect = wheelEl.getBoundingClientRect();
-                const centerX = rect.left + rect.width / 2;
-                const centerY = rect.top + rect.height / 2;
-                const maxRadius = (rect.width / 2) * 0.85;
-
-                if (maxRadius <= 0) return;
-
-                const dx = touch.clientX - centerX;
-                const dy = touch.clientY - centerY;
-
-                let rawX = dx / maxRadius;
-                let rawY = dy / maxRadius;
-
-                const dist = Math.hypot(rawX, rawY);
-                if (dist > 1) {
-                    rawX /= dist;
-                    rawY /= dist;
-                }
-
-                onMove(rawX, rawY);
-            }
-
-            // 1. Pointer Events
-            wheelEl.addEventListener('pointerdown', (e) => {
-                e.preventDefault();
-                isDragging = true;
-                activePointerId = e.pointerId;
-                try { wheelEl.setPointerCapture(e.pointerId); } catch(err){}
-                handlePointer(e);
-            });
-
-            wheelEl.addEventListener('pointermove', (e) => {
-                if (isDragging && e.pointerId === activePointerId) {
-                    e.preventDefault();
-                    handlePointer(e);
-                }
-            });
-
-            const releasePointer = (e) => {
-                if (isDragging && e.pointerId === activePointerId) {
-                    isDragging = false;
-                    activePointerId = null;
-                    try {
-                        if (wheelEl.hasPointerCapture(e.pointerId)) {
-                            wheelEl.releasePointerCapture(e.pointerId);
-                        }
-                    } catch(err){}
-                    onEnd();
-                }
-            };
-
-            wheelEl.addEventListener('pointerup', releasePointer);
-            wheelEl.addEventListener('pointercancel', releasePointer);
-
-            // 2. Fallback Touch Events for older browsers/Safari
+            // 1. TOUCH EVENTS (Mobile & Tablet)
             wheelEl.addEventListener('touchstart', (e) => {
                 e.preventDefault();
+                if (isDragging) return;
+
+                const touch = e.changedTouches[0];
                 isDragging = true;
-                handleTouch(e);
+                activeTouchId = touch.identifier;
+                handleMove(touch.clientX, touch.clientY);
             }, { passive: false });
 
-            wheelEl.addEventListener('touchmove', (e) => {
-                if (isDragging) {
-                    e.preventDefault();
-                    handleTouch(e);
+            window.addEventListener('touchmove', (e) => {
+                if (isDragging && activeTouchId !== null) {
+                    let touch = null;
+                    for (let i = 0; i < e.touches.length; i++) {
+                        if (e.touches[i].identifier === activeTouchId) {
+                            touch = e.touches[i];
+                            break;
+                        }
+                    }
+                    if (touch) {
+                        e.preventDefault();
+                        handleMove(touch.clientX, touch.clientY);
+                    }
                 }
             }, { passive: false });
 
-            const releaseTouch = (e) => {
-                isDragging = false;
-                onEnd();
+            const endTouch = (e) => {
+                if (isDragging && activeTouchId !== null) {
+                    let oursEnded = false;
+                    for (let i = 0; i < e.changedTouches.length; i++) {
+                        if (e.changedTouches[i].identifier === activeTouchId) {
+                            oursEnded = true;
+                            break;
+                        }
+                    }
+                    if (oursEnded) {
+                        isDragging = false;
+                        activeTouchId = null;
+                        onEnd();
+                    }
+                }
             };
+            window.addEventListener('touchend', endTouch);
+            window.addEventListener('touchcancel', endTouch);
 
-            wheelEl.addEventListener('touchend', releaseTouch);
-            wheelEl.addEventListener('touchcancel', releaseTouch);
+            // 2. MOUSE EVENTS (Desktop)
+            wheelEl.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                isDragging = true;
+                handleMove(e.clientX, e.clientY);
+            });
 
-            // Global release safety
-            document.addEventListener('pointerup', (e) => {
-                if (isDragging && e.pointerId === activePointerId) {
+            window.addEventListener('mousemove', (e) => {
+                if (isDragging && activeTouchId === null) {
+                    handleMove(e.clientX, e.clientY);
+                }
+            });
+
+            window.addEventListener('mouseup', () => {
+                if (isDragging && activeTouchId === null) {
                     isDragging = false;
-                    activePointerId = null;
                     onEnd();
                 }
             });
