@@ -516,7 +516,7 @@
                 inset 1px 0 0 rgba(255,255,255,0.9),   /* left highlight bevel */
                 inset 0 -6px 8px rgba(0,0,0,0.12),     /* bottom shadow inside key */
                 2px 4px 8px rgba(0,0,0,0.45);           /* drop shadow on right/bottom */
-            z-index: 1;
+            z-index: auto;
             cursor: pointer;
             touch-action: none;
             flex-shrink: 0;
@@ -3356,7 +3356,6 @@
         let pollingActive = false;
 
         function runGamepadPollLoop() {
-            if (!pollingActive) return;
             pollGamepadState();
             requestAnimationFrame(runGamepadPollLoop);
         }
@@ -3374,9 +3373,8 @@
                 }
             }
 
-            if (gamepadIndex === null || !isAudioReady || !activeEngine) return;
-            const pad = navigator.getGamepads()[gamepadIndex];
-            if (!pad) return;
+            if (!isAudioReady || !activeEngine) return;
+            const pad = (gamepadIndex !== null) ? navigator.getGamepads()[gamepadIndex] : null;
 
             if (pad.buttons[9].pressed && !(previousButtons[9] || false)) {
                 setPlayMode(currentMode === 'piano' ? 'chord' : 'piano');
@@ -3715,6 +3713,9 @@
 
         // Detect if a gamepad is already plugged in on page load
         checkInitialGamepad();
+        
+        // Start the controls loop unconditionally to process touch joystick sliding
+        runGamepadPollLoop();
     </script>
 <script src="donate-widget.js"></script>
 </body>
