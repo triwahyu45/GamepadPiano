@@ -1705,6 +1705,9 @@
         function setupTouchJoystick(wheelEl, onMove, onEnd) {
             if (!wheelEl) return;
 
+            let isDragging = false;
+            let activePointerId = null;
+
             function handlePointer(e) {
                 const rect = wheelEl.getBoundingClientRect();
                 const centerX = rect.left + rect.width / 2;
@@ -1728,30 +1731,102 @@
                 onMove(rawX, rawY);
             }
 
+            function handleTouch(e) {
+                if (!e.touches || e.touches.length === 0) return;
+                let touch = null;
+                // Look for touch that originated in wheelEl
+                for (let i = 0; i < e.touches.length; i++) {
+                    if (wheelEl.contains(e.touches[i].target)) {
+                        touch = e.touches[i];
+                        break;
+                    }
+                }
+                if (!touch) touch = e.touches[0];
+
+                const rect = wheelEl.getBoundingClientRect();
+                const centerX = rect.left + rect.width / 2;
+                const centerY = rect.top + rect.height / 2;
+                const maxRadius = (rect.width / 2) * 0.85;
+
+                if (maxRadius <= 0) return;
+
+                const dx = touch.clientX - centerX;
+                const dy = touch.clientY - centerY;
+
+                let rawX = dx / maxRadius;
+                let rawY = dy / maxRadius;
+
+                const dist = Math.hypot(rawX, rawY);
+                if (dist > 1) {
+                    rawX /= dist;
+                    rawY /= dist;
+                }
+
+                onMove(rawX, rawY);
+            }
+
+            // 1. Pointer Events
             wheelEl.addEventListener('pointerdown', (e) => {
                 e.preventDefault();
+                isDragging = true;
+                activePointerId = e.pointerId;
                 try { wheelEl.setPointerCapture(e.pointerId); } catch(err){}
                 handlePointer(e);
             });
 
             wheelEl.addEventListener('pointermove', (e) => {
-                if (wheelEl.hasPointerCapture(e.pointerId)) {
+                if (isDragging && e.pointerId === activePointerId) {
                     e.preventDefault();
                     handlePointer(e);
                 }
             });
 
-            const release = (e) => {
-                try {
-                    if (wheelEl.hasPointerCapture(e.pointerId)) {
-                        wheelEl.releasePointerCapture(e.pointerId);
-                    }
-                } catch(err){}
+            const releasePointer = (e) => {
+                if (isDragging && e.pointerId === activePointerId) {
+                    isDragging = false;
+                    activePointerId = null;
+                    try {
+                        if (wheelEl.hasPointerCapture(e.pointerId)) {
+                            wheelEl.releasePointerCapture(e.pointerId);
+                        }
+                    } catch(err){}
+                    onEnd();
+                }
+            };
+
+            wheelEl.addEventListener('pointerup', releasePointer);
+            wheelEl.addEventListener('pointercancel', releasePointer);
+
+            // 2. Fallback Touch Events for older browsers/Safari
+            wheelEl.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                isDragging = true;
+                handleTouch(e);
+            }, { passive: false });
+
+            wheelEl.addEventListener('touchmove', (e) => {
+                if (isDragging) {
+                    e.preventDefault();
+                    handleTouch(e);
+                }
+            }, { passive: false });
+
+            const releaseTouch = (e) => {
+                isDragging = false;
                 onEnd();
             };
 
-            wheelEl.addEventListener('pointerup', release);
-            wheelEl.addEventListener('pointercancel', release);
+            wheelEl.addEventListener('touchend', releaseTouch);
+            wheelEl.addEventListener('touchcancel', releaseTouch);
+
+            // Global release safety
+            document.addEventListener('pointerup', (e) => {
+                if (isDragging && e.pointerId === activePointerId) {
+                    isDragging = false;
+                    activePointerId = null;
+                    onEnd();
+                }
+            });
         }
 
         function releasePointer(pointerId) {
