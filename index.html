@@ -1201,7 +1201,184 @@
                 top: 30px;
             }
         }
+
+        /* Gesture Synth Mode Styles */
+        .mode-tab-btn[data-mode="gesture"] {
+            color: #00f0c0;
+        }
+
+        #mode-container.mode-gesture .chord-wheels,
+        #mode-container.mode-gesture .chord-display-area {
+            opacity: 0 !important;
+            pointer-events: none !important;
+            display: none !important;
+        }
+
+        #mode-container.mode-gesture .gesture-synth-panel {
+            display: flex !important;
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        #mode-container:not(.mode-gesture) .gesture-synth-panel {
+            display: none !important;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        #mode-container.mode-gesture .piano-wrapper-scroll {
+            transform: translate(-50%, 340px);
+        }
+        #mode-container.mode-gesture .piano-wrapper {
+            height: 150px;
+        }
+        #mode-container.mode-gesture .black-key {
+            height: 90px;
+        }
+
+        .gesture-synth-panel {
+            position: absolute;
+            top: 55px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: calc(100% - 30px);
+            max-width: 900px;
+            height: 270px;
+            display: flex;
+            gap: 15px;
+            z-index: 10;
+        }
+
+        .gesture-video-wrapper {
+            flex: 1.5;
+            position: relative;
+            background: #030807;
+            border: 1px solid rgba(0, 240, 192, 0.25);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(0, 240, 192, 0.08);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #gesture-webcam {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1);
+        }
+
+        #gesture-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            transform: scaleX(-1);
+        }
+
+        .gesture-hud {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            display: flex;
+            gap: 10px;
+            z-index: 5;
+        }
+
+        .hud-item {
+            background: rgba(0, 0, 0, 0.75);
+            border: 1px solid rgba(0, 240, 192, 0.3);
+            border-radius: 4px;
+            padding: 4px 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .hud-label {
+            font-size: 0.65em;
+            color: #88c2ad;
+            letter-spacing: 1px;
+        }
+
+        .hud-value {
+            font-size: 1.1em;
+            font-weight: bold;
+            color: var(--primary);
+            font-family: monospace;
+            text-shadow: 0 0 8px var(--primary);
+        }
+
+        .gesture-controls {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            z-index: 5;
+        }
+
+        .gesture-btn {
+            background: rgba(0, 240, 192, 0.15);
+            border: 1px solid var(--primary);
+            color: var(--primary);
+            padding: 6px 14px;
+            border-radius: 4px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .gesture-btn:hover {
+            background: var(--primary);
+            color: #000;
+            box-shadow: 0 0 15px var(--primary);
+        }
+
+        .gesture-status-text {
+            font-size: 0.8em;
+            color: #88c2ad;
+            background: rgba(0,0,0,0.6);
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+
+        .gesture-guide-card {
+            flex: 1;
+            background: rgba(3, 8, 7, 0.9);
+            border: 1px solid rgba(0, 240, 192, 0.2);
+            border-radius: 8px;
+            padding: 12px 16px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            font-size: 0.82em;
+            color: #c0ded4;
+            overflow-y: auto;
+        }
+
+        .gesture-guide-card h4 {
+            margin: 0;
+            color: var(--primary);
+            font-size: 0.95em;
+            letter-spacing: 1px;
+        }
+
+        .gesture-guide-card ul {
+            margin: 0;
+            padding-left: 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
     </style>
+    <!-- MediaPipe Camera Utils & Hands for Gesture Synth Mode -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
 </head>
 
 <body>
@@ -1390,6 +1567,44 @@
             </div>
         </div>
 
+                <div id="gesture-panel" class="gesture-synth-panel">
+            <div class="gesture-video-wrapper">
+                <video id="gesture-webcam" autoplay playsinline muted></video>
+                <canvas id="gesture-canvas"></canvas>
+                <div class="gesture-hud">
+                    <div class="hud-item">
+                        <span class="hud-label">ROOT NADA</span>
+                        <span class="hud-value" id="gesture-root-val">C4</span>
+                    </div>
+                    <div class="hud-item">
+                        <span class="hud-label">TIPE AKORD</span>
+                        <span class="hud-value" id="gesture-type-val">Major</span>
+                    </div>
+                    <div class="hud-item">
+                        <span class="hud-label">STATUS TRIGGER</span>
+                        <span class="hud-value" id="gesture-trigger-val">RELEASED</span>
+                    </div>
+                </div>
+                <div class="gesture-controls">
+                    <button id="toggle-camera-btn" class="gesture-btn" onclick="toggleGestureCamera()">🎥 Mulai Kamera</button>
+                    <span class="gesture-status-text" id="gesture-status-text">Kamera nonaktif</span>
+                </div>
+            </div>
+            <div class="gesture-guide-card">
+                <h4>🖐️ GESTURE SYNTH CONTROL</h4>
+                <ul>
+                    <li><b>Tangan Kiri (Posisi Y Atas-Bawah)</b>: Menentukan <b>Root Note (C, D, E, F, G, A, B)</b></li>
+                    <li><b>Tangan Kanan (Jumlah Jari In-Air)</b>:
+                        <br>• 1 Jari = <b>Major</b>
+                        <br>• 2 Jari = <b>Minor</b>
+                        <br>• 3 Jari = <b>7th</b>
+                        <br>• 4 Jari = <b>Maj7</b>
+                        <br>• 5 Jari = <b>Sus4</b>
+                    </li>
+                    <li><b>Pinch / Kepal Jari (Jempol + Telunjuk)</b>: Mentrigger & membunyikan Akord Piano/Synth secara real-time!</li>
+                </ul>
+            </div>
+        </div>
         <div class="chord-wheels">
             <div class="wheel" id="wheel-left">
                 <div class="wheel-center" id="wc-left">ROOT</div>
@@ -2874,7 +3089,7 @@
 
             const container = document.getElementById('mode-container');
             if (container) {
-                container.className = currentMode === 'piano' ? 'mode-piano' : 'mode-chord';
+                container.className = 'mode-' + currentMode;
             }
 
             // Sinkronisasi tab active class di UI
@@ -2949,7 +3164,7 @@
             } else if (e.key === '5') {
                 cycleChordPlay(1);
             } else if (e.key.toLowerCase() === 'm') {
-                setPlayMode(currentMode === 'piano' ? 'chord' : 'piano');
+                const modes=['piano','chord','gesture']; setPlayMode(modes[(modes.indexOf(currentMode)+1)%modes.length]);
             } else if (e.key === '[') {
                 adjustTranspose(-1);
             } else if (e.key === ']') {
@@ -3351,7 +3566,7 @@
             const pad = (gamepadIndex !== null) ? navigator.getGamepads()[gamepadIndex] : null;
 
             if (pad.buttons[9].pressed && !(previousButtons[9] || false)) {
-                setPlayMode(currentMode === 'piano' ? 'chord' : 'piano');
+                const modes=['piano','chord','gesture']; setPlayMode(modes[(modes.indexOf(currentMode)+1)%modes.length]);
             }
 
             // Kombinasi Tombol Gamepad untuk Mengubah Setting (Menahan Select/Share [Button 8])
@@ -3692,6 +3907,222 @@
         runGamepadPollLoop();
     </script>
 <script src="donate-widget.js"></script>
+
+        // ==================== GESTURE SYNTH ENGINE (MEDIAPIPE) ====================
+        let gestureMediaStream = null;
+        let gestureHands = null;
+        let gestureCamera = null;
+        let isGestureCameraActive = false;
+        let lastGestureChordKey = null;
+        let isGesturePinching = false;
+
+        const GESTURE_ROOT_PITCHES = ['C4', 'D4', 'E4', 'F4', 'G4', 'A4', 'B4', 'C5'];
+        const GESTURE_CHORD_TYPES = [
+            { name: 'Major', semitones: [0, 4, 7] },
+            { name: 'Minor', semitones: [0, 3, 7] },
+            { name: '7th', semitones: [0, 4, 7, 10] },
+            { name: 'Maj7', semitones: [0, 4, 7, 11] },
+            { name: 'Sus4', semitones: [0, 5, 7] }
+        ];
+
+        function countExtendedFingers(landmarks) {
+            let count = 0;
+            if (landmarks[8].y < landmarks[6].y) count++;
+            if (landmarks[12].y < landmarks[10].y) count++;
+            if (landmarks[16].y < landmarks[14].y) count++;
+            if (landmarks[20].y < landmarks[18].y) count++;
+            if (landmarks[4].x < landmarks[3].x || landmarks[4].y < landmarks[3].y) count++;
+            return Math.max(1, Math.min(5, count));
+        }
+
+        function initGestureEngine() {
+            if (gestureHands) return;
+            try {
+                gestureHands = new Hands({
+                    locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+                });
+                gestureHands.setOptions({
+                    maxNumHands: 2,
+                    modelComplexity: 1,
+                    minDetectionConfidence: 0.5,
+                    minTrackingConfidence: 0.5
+                });
+                gestureHands.onResults(onGestureResults);
+            } catch(e) {
+                console.error("Gesture Engine Init Error:", e);
+            }
+        }
+
+        async function toggleGestureCamera() {
+            const btn = document.getElementById('toggle-camera-btn');
+            const statusTxt = document.getElementById('gesture-status-text');
+            const video = document.getElementById('gesture-webcam');
+
+            if (isGestureCameraActive) {
+                if (gestureCamera) gestureCamera.stop();
+                if (gestureMediaStream) {
+                    gestureMediaStream.getTracks().forEach(t => t.stop());
+                    gestureMediaStream = null;
+                }
+                isGestureCameraActive = false;
+                if (btn) btn.innerHTML = '🎥 Mulai Kamera';
+                if (statusTxt) statusTxt.textContent = 'Kamera nonaktif';
+            } else {
+                initGestureEngine();
+                try {
+                    if (statusTxt) statusTxt.textContent = 'Meminta izin kamera...';
+                    gestureMediaStream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } });
+                    video.srcObject = gestureMediaStream;
+
+                    gestureCamera = new Camera(video, {
+                        onFrame: async () => {
+                            if (isGestureCameraActive && gestureHands) {
+                                await gestureHands.send({ image: video });
+                            }
+                        },
+                        width: 640,
+                        height: 480
+                    });
+                    gestureCamera.start();
+
+                    isGestureCameraActive = true;
+                    if (btn) btn.innerHTML = '⏹️ Hentikan Kamera';
+                    if (statusTxt) statusTxt.textContent = 'Kamera Aktif & Tracking Tangan';
+                } catch(err) {
+                    console.error("Camera Access Error:", err);
+                    if (statusTxt) statusTxt.textContent = '❌ Akses Kamera Ditolak';
+                }
+            }
+        }
+
+        function onGestureResults(results) {
+            const canvas = document.getElementById('gesture-canvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            canvas.width = canvas.clientWidth;
+            canvas.height = canvas.clientHeight;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            if (!results.multiHandLandmarks || results.multiHandLandmarks.length === 0) {
+                document.getElementById('gesture-root-val').textContent = '--';
+                document.getElementById('gesture-type-val').textContent = '--';
+                document.getElementById('gesture-trigger-val').textContent = 'NO HAND';
+                if (isGesturePinching) releaseGestureChord();
+                return;
+            }
+
+            let leftHand = null;
+            let rightHand = null;
+
+            for (let i = 0; i < results.multiHandLandmarks.length; i++) {
+                const landmarks = results.multiHandLandmarks[i];
+                const handedness = results.multiHandedness[i].label;
+                drawHandSkeleton(ctx, landmarks, canvas.width, canvas.height, handedness === "Left" ? "#00f0c0" : "#ff0055");
+
+                if (handedness === "Left") leftHand = landmarks;
+                else rightHand = landmarks;
+            }
+
+            if (!leftHand && rightHand) leftHand = rightHand;
+            if (!rightHand && leftHand) rightHand = leftHand;
+
+            const handY = Math.max(0, Math.min(1, leftHand[0].y));
+            const pitchIndex = Math.floor((1 - handY) * GESTURE_ROOT_PITCHES.length);
+            const selectedRoot = GESTURE_ROOT_PITCHES[Math.min(GESTURE_ROOT_PITCHES.length - 1, Math.max(0, pitchIndex))];
+
+            const fingerCount = countExtendedFingers(rightHand);
+            const selectedChordType = GESTURE_CHORD_TYPES[fingerCount - 1] || GESTURE_CHORD_TYPES[0];
+
+            document.getElementById('gesture-root-val').textContent = selectedRoot;
+            document.getElementById('gesture-type-val').textContent = selectedChordType.name;
+
+            const dx = leftHand[4].x - leftHand[8].x;
+            const dy = leftHand[4].y - leftHand[8].y;
+            const pinchDist = Math.sqrt(dx*dx + dy*dy);
+            const isPinching = pinchDist < 0.1;
+
+            const chordKey = `${selectedRoot}_${selectedChordType.name}`;
+
+            if (isPinching) {
+                document.getElementById('gesture-trigger-val').textContent = 'PLAYING 🎵';
+                document.getElementById('gesture-trigger-val').style.color = '#00f0c0';
+                if (!isGesturePinching || lastGestureChordKey !== chordKey) {
+                    playGestureChord(selectedRoot, selectedChordType);
+                    lastGestureChordKey = chordKey;
+                    isGesturePinching = true;
+                }
+            } else {
+                document.getElementById('gesture-trigger-val').textContent = 'RELEASED';
+                document.getElementById('gesture-trigger-val').style.color = '#88c2ad';
+                if (isGesturePinching) {
+                    releaseGestureChord();
+                    isGesturePinching = false;
+                    lastGestureChordKey = null;
+                }
+            }
+        }
+
+        function drawHandSkeleton(ctx, landmarks, w, h, color) {
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 3;
+            ctx.fillStyle = "#ffffff";
+
+            const connections = [
+                [0,1],[1,2],[2,3],[3,4],
+                [0,5],[5,6],[6,7],[7,8],
+                [5,9],[9,10],[10,11],[11,12],
+                [9,13],[13,14],[14,15],[15,16],
+                [13,17],[17,18],[18,19],[19,20],[0,17]
+            ];
+
+            for (const [start, end] of connections) {
+                ctx.beginPath();
+                ctx.moveTo(landmarks[start].x * w, landmarks[start].y * h);
+                ctx.lineTo(landmarks[end].x * w, landmarks[end].y * h);
+                ctx.stroke();
+            }
+
+            for (const pt of landmarks) {
+                ctx.beginPath();
+                ctx.arc(pt.x * w, pt.y * h, 3, 0, 2 * Math.PI);
+                ctx.fill();
+            }
+        }
+
+        let activeGestureNotes = [];
+
+        function playGestureChord(rootPitch, chordType) {
+            if (!isAudioReady || !activeEngine) return;
+            releaseGestureChord();
+            try {
+                const rootMidi = Tone.Frequency(rootPitch).toMidi();
+                const chordMidis = chordType.semitones.map(s => rootMidi + s);
+                activeGestureNotes = chordMidis.map(m => Tone.Frequency(m, "midi").toNote());
+
+                if (typeof activeEngine.triggerAttack === 'function') {
+                    activeEngine.triggerAttack(activeGestureNotes);
+                }
+                
+                // Highlight UI Piano Keys
+                if (typeof highlightPianoKeysForChord === 'function') {
+                    highlightPianoKeysForChord(activeGestureNotes);
+                }
+            } catch(err) {
+                console.error("Gesture Chord Trigger Error:", err);
+            }
+        }
+
+        function releaseGestureChord() {
+            if (activeEngine && activeGestureNotes.length > 0) {
+                try {
+                    if (typeof activeEngine.triggerRelease === 'function') {
+                        activeEngine.triggerRelease(activeGestureNotes);
+                    }
+                } catch(e) {}
+                activeGestureNotes = [];
+            }
+        }
+
 </body>
 
 </html>
