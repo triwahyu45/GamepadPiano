@@ -1154,6 +1154,24 @@
                 transform-origin: top center;
             }
 
+            
+            /* Gesture Mode Responsive */
+            #mode-container.mode-gesture {
+                height: 550px;
+            }
+            #mode-container.mode-gesture .active-status-bar {
+                top: 280px;
+            }
+            #mode-container.mode-gesture .piano-wrapper-scroll {
+                transform: translate(-50%, 320px) scale(0.70);
+            }
+            .gesture-synth-panel {
+                height: 255px;
+            }
+            .gesture-guide-card {
+                display: none !important;
+            }
+
             /* chord mode: wheels scale down so piano fits below */
             #mode-container.mode-chord {
                 height: 560px;
@@ -1177,6 +1195,16 @@
         }
 
         @media (max-width: 500px) {
+            #mode-container.mode-gesture {
+                height: 495px;
+            }
+            #mode-container.mode-gesture .active-status-bar {
+                top: 255px;
+            }
+            #mode-container.mode-gesture .piano-wrapper-scroll {
+                transform: translate(-50%, 290px) scale(0.50);
+            }
+
             #mode-container.mode-piano .piano-wrapper-scroll {
                 transform: translate(-50%, 65px) scale(0.56);
                 transform-origin: top center;
@@ -1207,6 +1235,10 @@
             color: #00f0c0;
         }
 
+        #mode-container.mode-gesture {
+            height: 570px;
+        }
+
         #mode-container.mode-gesture .chord-wheels,
         #mode-container.mode-gesture .chord-display-area {
             opacity: 0 !important;
@@ -1226,8 +1258,13 @@
             pointer-events: none;
         }
 
+        #mode-container.mode-gesture .active-status-bar {
+            top: 295px;
+        }
+
         #mode-container.mode-gesture .piano-wrapper-scroll {
             transform: translate(-50%, 340px);
+            transform-origin: top center;
         }
         #mode-container.mode-gesture .piano-wrapper {
             height: 150px;
@@ -1651,8 +1688,20 @@
                 <button class="info-tab-btn" onclick="switchInfoTab('tab-mouse', this)">MOUSE & FITUR</button>
                 <button class="info-tab-btn" onclick="switchInfoTab('tab-chord-piano', this)">CHORD PIANO</button>
                 <button class="info-tab-btn" onclick="switchInfoTab('tab-chord-stik', this)">CHORD STIK</button>
+                <button class="info-tab-btn" onclick="switchInfoTab('tab-gesture', this)">👋 GESTURE AI</button>
             </div>
             
+            
+            <!-- Tab Gesture AI -->
+            <div id="tab-gesture" class="info-tab-content">
+                <ul class="info-list">
+                    <li><span>Kontrol Root Note (Pitch)</span><span class="key">Gerakan Ketinggian Tangan Kiri (Y-Axis)</span></li>
+                    <li><span>Pilih Tipe Akord</span><span class="key">Jumlah Jari Tangan Kanan (1=Major, 2=Minor, 3=7th, 4=Maj7, 5=Sus4)</span></li>
+                    <li><span>Play / Trigger Sound</span><span class="key">Pinch Jempol & Telunjuk (Pinch Gesture)</span></li>
+                    <li><span>Aktifkan / Matikan Kamera</span><span class="key">Klik Tombol "🎥 Mulai Kamera" pada Panel Gesture</span></li>
+                </ul>
+            </div>
+
             <!-- Tab Gamepad -->
             <div id="tab-gamepad" class="info-tab-content active">
                 <ul class="info-list">
